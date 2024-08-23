@@ -1,0 +1,7 @@
+# Ignore pytest cache and compiled files
+__pycache__/
+.pytest_cache/
+
+# Ignore environment files
+env/
+.env
