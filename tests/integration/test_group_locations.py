@@ -15,12 +15,15 @@ async def test_group_locations_by_county():
     for county_fips, data in county_data.items():
         assert "county_name" in data
         assert "zipcodes" in data
+        assert "state_id" in data
         assert isinstance(data["zipcodes"], list)
         assert len(data["zipcodes"]) > 0
 
     specific_fips = "37183"
     if specific_fips in county_data:
         assert len(county_data[specific_fips]["zipcodes"]) == 32
+        assert county_data[specific_fips]["state_id"] == "NC"
+        assert county_data[specific_fips]["county_name"] == "Wake"
         expected_zipcodes = [
             "27502",
             "27511",
