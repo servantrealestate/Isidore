@@ -1,9 +1,31 @@
 import os
 import pytest
 import aiohttp
-from app.services.zillow_service import fetch_zillow_properties
+from app.services.zillow_service import (
+    fetch_zillow_properties,
+    check_total_zillow_results,
+)
 
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
+
+
+@pytest.mark.asyncio
+async def test_check_total_zillow_results():
+    location = "Lee County, FL"
+    status_type = "ForSale"
+    sold_in_last = ""
+
+    # Ensure the API key is set
+    assert RAPIDAPI_ZILLOW_API_KEY is not None, "RAPIDAPI_ZILLOW_API_KEY must be set"
+
+    totalResultCount = await check_total_zillow_results(
+        location, status_type, sold_in_last
+    )
+
+    assert isinstance(totalResultCount, int), "Total results should be an integer"
+    assert totalResultCount >= 0, "Total results should be non-negative"
+
+    print(f"Total results for location {location}: {totalResultCount}")
 
 
 @pytest.mark.asyncio

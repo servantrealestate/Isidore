@@ -5,6 +5,24 @@ import asyncio
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
 
 
+async def check_total_zillow_results(location, status_type, sold_in_last="", **kwargs):
+    url = "https://zillow69.p.rapidapi.com/search"
+    headers = {
+        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
+        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
+    }
+    querystring = {
+        "location": location,
+        "status_type": status_type,
+        "home_type": "LotsLand",
+        "soldInLast": sold_in_last,
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers, params=querystring) as response:
+            response_data = await response.json()
+            return response_data.get("totalResultCount")
+
+
 async def fetch_zillow_properties(
     session, location, status_type, sold_in_last="", **kwargs
 ):
