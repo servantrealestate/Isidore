@@ -1,9 +1,9 @@
 from app.services.fetch_locations import fetch_locations_from_google_sheet
-from app.services.location_processor import process_locations
+from app.services.process_locations import group_locations_by_county
 
 
 async def run_property_services():
-    sheet_url = "your_google_sheet_csv_url"
+    sheet_url = "https://docs.google.com/spreadsheets/d/1jGa8Y6UmdU1YAY2GbtKSNt80GggSkaEU5CvWAB2InBE/pub?gid=0&single=true&output=csv"
 
     locations = await fetch_locations_from_google_sheet(sheet_url)
-    process_locations(locations)
+    group_locations_by_county(locations)
