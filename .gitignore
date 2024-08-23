@@ -11,3 +11,6 @@ project-guide.md
 
 # Ignore database files
 *.db
+
+# Ignore .vscode folder
+.vscode/
