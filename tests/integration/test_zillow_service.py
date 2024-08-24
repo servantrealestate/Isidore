@@ -2,11 +2,61 @@ import os
 import pytest
 import aiohttp
 from app.services.zillow_service import (
+    get_zillow_fetch_params,
     fetch_zillow_properties,
     check_total_zillow_results,
 )
 
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
+
+
+@pytest.mark.asyncio
+async def test_get_zillow_fetch_params():
+    # TODO: come up with a better way to define the county. Right now, name is the fips code.
+    county = {
+        "county_name": "Lee",
+        "state_id": "FL",
+        "zipcodes": [
+            "33901",
+            "33903",
+            "33904",
+            "33905",
+            "33907",
+            "33908",
+            "33909",
+            "33912",
+            "33913",
+            "33914",
+            "33916",
+            "33917",
+            "33919",
+            "33920",
+            "33921",
+            "33922",
+            "33924",
+            "33928",
+            "33931",
+            "33956",
+            "33957",
+            "33965",
+            "33966",
+            "33967",
+            "33971",
+            "33972",
+            "33973",
+            "33974",
+            "33976",
+            "33990",
+            "33991",
+            "33993",
+            "34134",
+            "34135",
+        ],
+    }
+    status_type = "ForSale"
+    fetch_params = await get_zillow_fetch_params(county, status_type)
+    assert fetch_params is not None, "Fetch params should not be None"
+    assert isinstance(fetch_params, list), "Fetch params should be a list"
 
 
 @pytest.mark.asyncio
