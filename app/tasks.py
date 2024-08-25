@@ -15,7 +15,7 @@ async def run_property_services():
     for county_fips, county_data in counties.items():
         # Get the queries for that location that will capture all the properties
         zillow_search_params = await get_zillow_search_params(county_data, "ForSale")
-        # TODO: Search for properties for sale
+        # TODO: Search for properties for sale. Need a rate limited, paginated search.
         # TODO: Check if properties are in the database
         # TODO: Update properties in the database
         # TODO: Add properties to the database
