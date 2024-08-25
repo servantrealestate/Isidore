@@ -161,6 +161,7 @@ async def split_query(location, status_type, min_price, max_price, fetch_params)
             logger.info(
                 f"Total results for price range {min_price} to {max_price} is greater than 400, so we need to split the query again."
             )
+            # TODO: address what happens if we've split the query down to where our max and min price are the same, and we still have more than 400 results.
             await split_query(location, status_type, min_price, max_price, fetch_params)
 
 
