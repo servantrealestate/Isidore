@@ -9,6 +9,69 @@ logger = logging.getLogger(__name__)
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
 
 
+async def check_total_zillow_results(location, status_type, sold_in_last="", **kwargs):
+    logger.debug(f"Received kwargs: {kwargs}")
+    url = "https://zillow69.p.rapidapi.com/search"
+    headers = {
+        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
+        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
+    }
+    querystring = {
+        "location": location,
+        "status_type": status_type,
+        "home_type": "LotsLand",
+        "soldInLast": sold_in_last,
+        "minPrice": kwargs.get("minPrice", ""),
+        "maxPrice": kwargs.get("maxPrice", ""),
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers, params=querystring) as response:
+            response_data = await response.json()
+            return response_data.get("totalResultCount")
+
+
+async def check_min_price(location, status_type, sold_in_last="", **kwargs):
+    url = "https://zillow69.p.rapidapi.com/search"
+    headers = {
+        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
+        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
+    }
+    querystring = {
+        "location": location,
+        "status_type": status_type,
+        "home_type": "LotsLand",
+        "soldInLast": sold_in_last,
+        "sort": "price_low_high",
+        "minPrice": kwargs.get("minPrice", ""),
+        "maxPrice": kwargs.get("maxPrice", ""),
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers, params=querystring) as response:
+            response_data = await response.json()
+            return response_data.get("props")[0].get("price")
+
+
+async def check_max_price(location, status_type, sold_in_last="", **kwargs):
+    url = "https://zillow69.p.rapidapi.com/search"
+    headers = {
+        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
+        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
+    }
+    querystring = {
+        "location": location,
+        "status_type": status_type,
+        "home_type": "LotsLand",
+        "soldInLast": sold_in_last,
+        "sort": "price_high_low",
+        "minPrice": kwargs.get("minPrice", ""),
+        "maxPrice": kwargs.get("maxPrice", ""),
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers, params=querystring) as response:
+            response_data = await response.json()
+            return response_data.get("props")[0].get("price")
+
+
 async def get_zillow_search_params(county, status_type):
     """
     Get the fetch parameters for Zillow API. There is a limit of 400 results per query, so if need be, this will split the query into multiple queries.
@@ -73,21 +136,3 @@ async def get_zillow_search_params(county, status_type):
             }
         )
     return fetch_params
-
-
-async def check_total_zillow_results(location, status_type, sold_in_last="", **kwargs):
-    url = "https://zillow69.p.rapidapi.com/search"
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
-        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
-    }
-    querystring = {
-        "location": location,
-        "status_type": status_type,
-        "home_type": "LotsLand",
-        "soldInLast": sold_in_last,
-    }
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers, params=querystring) as response:
-            response_data = await response.json()
-            return response_data.get("totalResultCount")
