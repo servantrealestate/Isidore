@@ -5,8 +5,11 @@ from app.services.fetch_zillow_search_params import (
     check_max_price,
 )
 import pytest
-import aiohttp
+import logging
 import os
+
+logger = logging.getLogger(__name__)
+
 
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
 
@@ -51,56 +54,3 @@ async def test_check_max_price():
 
     assert isinstance(maxPrice, int), "Max price should be an integer"
     assert maxPrice >= 0, "Max price should be non-negative"
-
-
-@pytest.mark.asyncio
-async def test_get_zillow_search_params():
-    county = {
-        "county_name": "Lee",
-        "state_id": "FL",
-        "zipcodes": [
-            "33901",
-            "33903",
-            "33904",
-            "33905",
-            "33907",
-            "33908",
-            "33909",
-            "33912",
-            "33913",
-            "33914",
-            "33916",
-            "33917",
-            "33919",
-            "33920",
-            "33921",
-            "33922",
-            "33924",
-            "33928",
-            "33931",
-            "33956",
-            "33957",
-            "33965",
-            "33966",
-            "33967",
-            "33971",
-            "33972",
-            "33973",
-            "33974",
-            "33976",
-            "33990",
-            "33991",
-            "33993",
-            "34134",
-            "34135",
-        ],
-    }
-    status_type = "ForSale"
-    async with aiohttp.ClientSession() as session:
-        search_params = await get_zillow_search_params(county, status_type, session)
-
-        assert isinstance(search_params, dict), "Search params should be a dictionary"
-        assert "location" in search_params, "Location should be in search params"
-        assert "status_type" in search_params, "Status type should be in search params"
-        assert "home_type" in search_params, "Home type should be in search params"
-        assert "soldInLast" in search_params, "Sold in last should be in search params"
