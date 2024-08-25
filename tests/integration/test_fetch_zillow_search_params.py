@@ -1,5 +1,4 @@
 from app.services.fetch_zillow_search_params import (
-    get_zillow_search_params,
     check_total_zillow_results,
     check_min_price,
     check_max_price,
