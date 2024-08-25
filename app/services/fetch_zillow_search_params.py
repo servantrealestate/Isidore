@@ -85,9 +85,10 @@ async def get_zillow_search_params(county, status_type):
         max_price = await check_max_price(location, status_type)
         number_of_splits = 10
         price_splits = np.linspace(min_price, max_price, number_of_splits)
+        price_splits = np.round(price_splits).astype(int)
         for i in range(number_of_splits - 1):
-            min_price = price_splits[i]
-            max_price = price_splits[i + 1] - 1
+            min_price = int(price_splits[i]) - 1
+            max_price = int(price_splits[i + 1])
             total_results_for_price_range = await check_total_zillow_results(
                 location, status_type, minPrice=min_price, maxPrice=max_price
             )
