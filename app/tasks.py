@@ -1,6 +1,9 @@
 from app.services.fetch_locations import fetch_locations_from_google_sheet
 from app.services.process_locations import group_locations_by_county
-from app.services.fetch_zillow_search_params import get_zillow_search_params
+from app.services.fetch_zillow_search_params import (
+    get_zillow_search_params,
+    check_total_zillow_results,
+)
 from app.services.fetch_zillow_properties import fetch_properties_for_params_list
 import logging
 
@@ -17,7 +20,20 @@ async def run_property_services():
         # Get the queries for that location that will capture all the properties
         zillow_search_params = await get_zillow_search_params(county_data, "ForSale")
         properties = await fetch_properties_for_params_list(zillow_search_params)
-        # TODO: add some verification logic to be sure the totalResultCount from the top level query matches the total number of properties returned
+
+        # Verify the totalResultCount matches the total number of properties returned
+        total_results = await check_total_zillow_results(
+            f"{county_data['county_name']} County, {county_data['state_id']}", "ForSale"
+        )
+        if total_results != len(properties):
+            logger.warning(
+                f"Total results ({total_results}) do not match the number of properties fetched ({len(properties)}) for {county_data['county_name']} County, {county_data['state_id']}"
+            )
+        else:
+            logger.info(
+                f"{county_data['county_name']} County, {county_data['state_id']}: Total results ({total_results}) match properties fetched ({len(properties)})"
+            )
+
         # TODO: Check if properties are in the database
         # TODO: Update properties in the database
         # TODO: Add properties to the database
