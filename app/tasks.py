@@ -5,6 +5,7 @@ from app.services.fetch_zillow_search_params import (
     check_total_zillow_results,
 )
 from app.services.fetch_zillow_properties import fetch_properties_for_params_list
+from app.services.property_service import get_or_create_property
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,9 +34,8 @@ async def run_property_services():
             logger.info(
                 f"{county_data['county_name']} County, {county_data['state_id']}: Total results ({total_results}) match properties fetched ({len(properties)})"
             )
-        # TODO: Check if properties are in the database
-        # TODO: If properties aren't in the database, query the Zillow API for the details of the property
-        # TODO: Add properties to the database
-        # TODO: If properties are in the db, see if price or status has changed, and update if necessary
+
+        for property_data in properties:
+            get_or_create_property(property_data)
 
     return "Success"
