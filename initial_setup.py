@@ -1,16 +1,5 @@
 from app.db import engine
-from app.models import (
-    Base,
-    Property,  # noqa: F401
-    Address,  # noqa: F401
-    PriceHistory,  # noqa: F401
-    School,  # noqa: F401
-    TaxHistory,  # noqa: F401
-    NearbyHome,  # noqa: F401
-    MortgageRates,  # noqa: F401
-    ResoFacts,  # noqa: F401
-    SolarPotential,  # noqa: F401
-)
+from app.models import Base, Property  # NOQA: F401
 from sqlalchemy import text
 
 # Check database connection
@@ -24,6 +13,13 @@ try:
         print(f"Existing tables before creation: {tables}")
 except Exception as e:
     print(f"Database connection failed: {e}")
+
+# Drop all tables
+try:
+    Base.metadata.drop_all(engine)
+    print("Existing tables dropped successfully.")
+except Exception as e:
+    print(f"Error dropping tables: {e}")
 
 # Create all tables
 try:
