@@ -1,4 +1,4 @@
-from app.db import engine
+from app.db import engine, ENVIRONMENT
 from app.models import Base, Property  # NOQA: F401
 from sqlalchemy import text
 
@@ -6,9 +6,16 @@ from sqlalchemy import text
 try:
     with engine.connect() as connection:
         print("Database connection successful.")
-        result = connection.execute(
-            text("SELECT name FROM sqlite_master WHERE type='table';")
-        )
+        if ENVIRONMENT == "development":
+            result = connection.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table';")
+            )
+        else:
+            result = connection.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+                )
+            )
         tables = result.fetchall()
         print(f"Existing tables before creation: {tables}")
 except Exception as e:
@@ -26,9 +33,16 @@ try:
     Base.metadata.create_all(engine)
     print("Tables created successfully.")
     with engine.connect() as connection:
-        result = connection.execute(
-            text("SELECT name FROM sqlite_master WHERE type='table';")
-        )
+        if ENVIRONMENT == "development":
+            result = connection.execute(
+                text("SELECT name FROM sqlite_master WHERE type='table';")
+            )
+        else:
+            result = connection.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+                )
+            )
         tables = result.fetchall()
         print(f"Existing tables after creation: {tables}")
 except Exception as e:
