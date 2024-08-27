@@ -73,7 +73,7 @@ async def split_query(location, status_type, min_price, max_price, fetch_params)
     price_splits = np.linspace(min_price, max_price, number_of_splits)
     price_splits = np.round(price_splits).astype(int)
     for i in range(number_of_splits - 1):
-        min_price = int(price_splits[i]) - 1
+        min_price = max(int(price_splits[i]) - 1, 0)  # Ensure min_price is not negative
         max_price = int(price_splits[i + 1])
         total_results_for_price_range = await check_total_zillow_results(
             location, status_type, minPrice=min_price, maxPrice=max_price
