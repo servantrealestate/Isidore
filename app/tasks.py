@@ -7,6 +7,7 @@ from app.services.fetch_zillow_search_params import (
 from app.services.fetch_zillow_properties import fetch_properties_for_params_list
 from app.services.property_service import get_or_create_property
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -39,3 +40,7 @@ async def run_property_services():
             get_or_create_property(property_data)
 
     return "Success"
+
+
+if __name__ == "__main__":
+    asyncio.run(run_property_services())

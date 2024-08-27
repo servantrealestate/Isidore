@@ -1,1 +1,1 @@
-worker: python app/tasks.py
+worker: python -m app.tasks
