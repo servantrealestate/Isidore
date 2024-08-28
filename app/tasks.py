@@ -5,7 +5,7 @@ from app.services.fetch_zillow_search_params import (
     check_total_zillow_results,
 )
 from app.services.fetch_zillow_properties import fetch_properties_for_params_list
-from app.services.property_service import get_or_create_property
+from app.services.property_service import get_or_create_properties
 import logging
 import asyncio
 
@@ -45,8 +45,7 @@ async def run_property_services():
                     f"{county_data['county_name']} County, {county_data['state_id']}: Total results ({total_results}) match properties fetched ({len(properties)})"
                 )
 
-            for property_data in properties:
-                get_or_create_property(property_data)
+            get_or_create_properties(properties)
         except Exception as e:
             logger.error(
                 f"An error occurred while processing {county_data['county_name']} County, {county_data['state_id']}: {e}"

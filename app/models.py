@@ -14,8 +14,8 @@ Base = declarative_base()
 class Property(Base):
     __tablename__ = "properties"
 
-    id = Column(Integer, primary_key=True)
-    zpid = Column(Integer, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    zpid = Column(Integer, unique=True, nullable=False)
     address = Column(String)
     unit = Column(String)
     latitude = Column(Float)

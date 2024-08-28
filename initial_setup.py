@@ -44,14 +44,6 @@ try:
 except Exception as e:
     print(f"Error dropping tables: {e}")
 
-# Create all tables
-try:
-    Base.metadata.create_all(engine)
-    print("Tables created successfully.")
-    with engine.connect() as connection:
-        query = f"SELECT table_name FROM `{dataset_id}.INFORMATION_SCHEMA.TABLES`"
-        result = connection.execute(text(query))
-        tables = result.fetchall()
-        print(f"Existing tables after creation: {tables}")
-except Exception as e:
-    print(f"Error creating tables: {e}")
+# Create tables
+Base.metadata.create_all(engine)
+print("Tables created successfully.")
