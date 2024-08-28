@@ -39,3 +39,6 @@ class Property(Base):
     country = Column(String)
     currency = Column(String)
     has_image = Column(Boolean)
+    county_name = Column(String)
+    state_id = Column(String)
+    zip_code = Column(String)

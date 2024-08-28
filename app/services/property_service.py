@@ -1,6 +1,7 @@
 from google.cloud import bigquery
 import logging
 import os
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,11 @@ def get_or_create_properties(properties_data):
                 client.query(update_query)
                 logger.info(f"Updated property {zpid} in the database.")
         else:
+            # Parse zip code from address using regex
+            address = property_data.get("address", "")
+            zip_code_match = re.search(r"\b\d{5}\b$", address)
+            zip_code = zip_code_match.group(0) if zip_code_match else None
+
             rows_to_insert.append(
                 {
                     "id": zpid,
@@ -91,10 +97,12 @@ def get_or_create_properties(properties_data):
                     "country": property_data.get("country"),
                     "currency": property_data.get("currency"),
                     "has_image": property_data.get("hasImage"),
+                    "county_name": property_data.get("county_name"),
+                    "state_id": property_data.get("state_id"),
+                    "zip_code": zip_code,
                 }
             )
             logger.info(f"Added property with zpid {zpid} to rows_to_insert")
-
     if rows_to_insert:
         logger.info(f"Inserting {len(rows_to_insert)} new properties")
         errors = client.insert_rows_json(table_id, rows_to_insert)

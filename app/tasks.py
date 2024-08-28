@@ -45,13 +45,17 @@ async def run_property_services():
                     f"{county_data['county_name']} County, {county_data['state_id']}: Total results ({total_results}) match properties fetched ({len(properties)})"
                 )
 
+            # Pass county_name and state_id to get_or_create_properties
+            for property in properties:
+                property["county_name"] = county_data["county_name"]
+                property["state_id"] = county_data["state_id"]
+
             get_or_create_properties(properties)
         except Exception as e:
             logger.error(
                 f"An error occurred while processing {county_data['county_name']} County, {county_data['state_id']}: {e}"
             )
             continue
-
     return "Success"
 
 
