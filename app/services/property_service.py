@@ -2,6 +2,7 @@ from google.cloud import bigquery
 import logging
 import os
 import re
+from google.api_core.exceptions import NotFound
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,46 @@ def get_or_create_properties(properties_data):
     logger.info(
         f"Project ID: {project_id}, Dataset ID: {dataset_id}, Table ID: {table_id}"
     )
+
+    # Check if table exists, create if not
+    try:
+        client.get_table(table_id)
+    except NotFound:
+        logger.info(f"Table {table_id} not found. Creating table.")
+        schema = [
+            bigquery.SchemaField("id", "INTEGER"),
+            bigquery.SchemaField("zpid", "INTEGER"),
+            bigquery.SchemaField("address", "STRING"),
+            bigquery.SchemaField("unit", "STRING"),
+            bigquery.SchemaField("latitude", "FLOAT"),
+            bigquery.SchemaField("longitude", "FLOAT"),
+            bigquery.SchemaField("price", "FLOAT"),
+            bigquery.SchemaField("price_change", "FLOAT"),
+            bigquery.SchemaField("zestimate", "FLOAT"),
+            bigquery.SchemaField("img_src", "STRING"),
+            bigquery.SchemaField("detail_url", "STRING"),
+            bigquery.SchemaField("bedrooms", "FLOAT"),
+            bigquery.SchemaField("bathrooms", "FLOAT"),
+            bigquery.SchemaField("living_area", "FLOAT"),
+            bigquery.SchemaField("lot_area_value", "FLOAT"),
+            bigquery.SchemaField("lot_area_unit", "STRING"),
+            bigquery.SchemaField("listing_status", "STRING"),
+            bigquery.SchemaField("property_type", "STRING"),
+            bigquery.SchemaField("contingent_listing_type", "STRING"),
+            bigquery.SchemaField("rent_zestimate", "FLOAT"),
+            bigquery.SchemaField("days_on_zillow", "FLOAT"),
+            bigquery.SchemaField("date_sold", "STRING"),
+            bigquery.SchemaField("country", "STRING"),
+            bigquery.SchemaField("currency", "STRING"),
+            bigquery.SchemaField("has_image", "BOOLEAN"),
+            bigquery.SchemaField("county_name", "STRING"),
+            bigquery.SchemaField("state_id", "STRING"),
+            bigquery.SchemaField("county_fips", "STRING"),
+            bigquery.SchemaField("zip_code", "STRING"),
+        ]
+        table = bigquery.Table(table_id, schema=schema)
+        client.create_table(table)
+        logger.info(f"Table {table_id} created successfully.")
 
     # Collect all zpids
     zpids = [int(property_data["zpid"]) for property_data in properties_data]
@@ -99,6 +140,7 @@ def get_or_create_properties(properties_data):
                     "has_image": property_data.get("hasImage"),
                     "county_name": property_data.get("county_name"),
                     "state_id": property_data.get("state_id"),
+                    "county_fips": property_data.get("county_fips"),
                     "zip_code": zip_code,
                 }
             )

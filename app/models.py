@@ -41,4 +41,5 @@ class Property(Base):
     has_image = Column(Boolean)
     county_name = Column(String)
     state_id = Column(String)
+    county_fips = Column(String)
     zip_code = Column(String)

@@ -49,6 +49,7 @@ async def run_property_services():
             for property in properties:
                 property["county_name"] = county_data["county_name"]
                 property["state_id"] = county_data["state_id"]
+                property["county_fips"] = county_fips
 
             get_or_create_properties(properties)
         except Exception as e:
