@@ -51,13 +51,13 @@ async def run_property_services():
 
     # Process Sold properties
     for county_fips, county_data in tqdm(
-        list(counties.items())[:5], desc="Processing Sold Properties"
+        list(counties.items()), desc="Processing Sold Properties"
     ):
         await process_county(county_fips, county_data, "RecentlySold", soldInLast="90")
 
     # Process ForSale properties
     for county_fips, county_data in tqdm(
-        list(counties.items())[:5], desc="Processing For Sale Properties"
+        list(counties.items()), desc="Processing For Sale Properties"
     ):
         await process_county(county_fips, county_data, "ForSale")
 
