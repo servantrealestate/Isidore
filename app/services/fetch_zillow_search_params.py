@@ -144,6 +144,8 @@ async def get_zillow_search_params(county, status_type, **kwargs):
         "Winchester",
     ]:
         location = f"{county['county_name']}, {county['state_id']}"
+    elif county["state_id"] == "NV" and county["county_name"] == "Carson City":
+        location = f"{county['county_name']}, {county['state_id']}"
     else:
         location = f"{county['county_name']} County, {county['state_id']}"
     total_results = await check_total_zillow_results(location, status_type, **kwargs)
