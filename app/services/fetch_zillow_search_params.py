@@ -17,8 +17,6 @@ async def check_total_zillow_results(location, status_type, **kwargs):
         "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
         "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
     }
-    if not kwargs.get("soldInLast"):
-        print("No soldInLast")
     querystring = {
         "location": location,
         "status_type": status_type,
