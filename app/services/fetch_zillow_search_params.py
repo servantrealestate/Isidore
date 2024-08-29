@@ -10,7 +10,7 @@ logging.basicConfig(
 )
 
 
-async def check_total_zillow_results(location, status_type, sold_in_last="", **kwargs):
+async def check_total_zillow_results(location, status_type, **kwargs):
     logger.debug(f"Received kwargs: {kwargs}")
     url = "https://zillow69.p.rapidapi.com/search"
     headers = {
@@ -21,7 +21,7 @@ async def check_total_zillow_results(location, status_type, sold_in_last="", **k
         "location": location,
         "status_type": status_type,
         "home_type": "LotsLand",
-        "soldInLast": sold_in_last,
+        "soldInLast": kwargs.get("soldInLast", ""),
         "minPrice": kwargs.get("minPrice", ""),
         "maxPrice": kwargs.get("maxPrice", ""),
     }
@@ -31,7 +31,7 @@ async def check_total_zillow_results(location, status_type, sold_in_last="", **k
             return response_data.get("totalResultCount")
 
 
-async def check_min_price(location, status_type, sold_in_last="", **kwargs):
+async def check_min_price(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
@@ -41,7 +41,7 @@ async def check_min_price(location, status_type, sold_in_last="", **kwargs):
         "location": location,
         "status_type": status_type,
         "home_type": "LotsLand",
-        "soldInLast": sold_in_last,
+        "soldInLast": kwargs.get("soldInLast", ""),
         "sort": "price_low_high",
         "minPrice": kwargs.get("minPrice", ""),
         "maxPrice": kwargs.get("maxPrice", ""),
@@ -52,7 +52,7 @@ async def check_min_price(location, status_type, sold_in_last="", **kwargs):
             return response_data.get("props")[0].get("price")
 
 
-async def check_max_price(location, status_type, sold_in_last="", **kwargs):
+async def check_max_price(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
@@ -62,7 +62,7 @@ async def check_max_price(location, status_type, sold_in_last="", **kwargs):
         "location": location,
         "status_type": status_type,
         "home_type": "LotsLand",
-        "soldInLast": sold_in_last,
+        "soldInLast": kwargs.get("soldInLast", ""),
         "sort": "price_high_low",
         "minPrice": kwargs.get("minPrice", ""),
         "maxPrice": kwargs.get("maxPrice", ""),
@@ -74,7 +74,7 @@ async def check_max_price(location, status_type, sold_in_last="", **kwargs):
 
 
 async def split_query(
-    location, status_type, min_price, max_price, fetch_params, sold_in_last=""
+    location, status_type, min_price, max_price, fetch_params, **kwargs
 ):
     number_of_splits = 10
     price_splits = np.linspace(min_price, max_price, number_of_splits)
@@ -95,7 +95,7 @@ async def split_query(
                     "status_type": status_type,
                     "minPrice": min_price,
                     "maxPrice": max_price,
-                    "soldInLast": sold_in_last,
+                    "soldInLast": kwargs.get("soldInLast", ""),
                 }
             )
         else:
@@ -106,31 +106,31 @@ async def split_query(
             await split_query(location, status_type, min_price, max_price, fetch_params)
 
 
-async def get_zillow_search_params(county, status_type, sold_in_last=""):
+async def get_zillow_search_params(county, status_type, **kwargs):
     """
     Get the fetch parameters for Zillow API. There is a limit of 400 results per query, so if need be, this will split the query into multiple queries.
     """
     location = f"{county['county_name']} County, {county['state_id']}"
-    total_results = await check_total_zillow_results(
-        location, status_type, sold_in_last=sold_in_last
-    )
+    total_results = await check_total_zillow_results(location, status_type, **kwargs)
     if total_results == 0:
         logger.warning(
-            f"No results found for {location} with status_type {status_type} and sold_in_last {sold_in_last}"
+            f"No results found for {location} with status_type {status_type} and sold_in_last {kwargs.get('soldInLast', '')}"
         )
         return None
     logger.info(f"Location: {location} | Total Results: {total_results}")
     fetch_params = []
     if total_results > 400:
-        min_price = await check_min_price(location, status_type, sold_in_last)
-        max_price = await check_max_price(location, status_type, sold_in_last)
-        await split_query(location, status_type, min_price, max_price, fetch_params)
+        min_price = await check_min_price(location, status_type, **kwargs)
+        max_price = await check_max_price(location, status_type, **kwargs)
+        await split_query(
+            location, status_type, min_price, max_price, fetch_params, **kwargs
+        )
     else:
         fetch_params.append(
             {
                 "location": location,
                 "status_type": status_type,
-                "soldInLast": sold_in_last,
+                "soldInLast": kwargs.get("soldInLast", ""),
             }
         )
     return fetch_params
