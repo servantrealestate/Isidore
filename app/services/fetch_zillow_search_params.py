@@ -83,7 +83,11 @@ async def split_query(
         min_price = max(int(price_splits[i]) - 1, 0)  # Ensure min_price is not negative
         max_price = int(price_splits[i + 1])
         total_results_for_price_range = await check_total_zillow_results(
-            location, status_type, minPrice=min_price, maxPrice=max_price
+            location,
+            status_type,
+            minPrice=min_price,
+            maxPrice=max_price,
+            soldInLast=kwargs.get("soldInLast", ""),
         )
         logger.info(
             f"Location: {location} | Status Type: {status_type} | Price Range: {min_price}-{max_price} | Total Results: {total_results_for_price_range}"
@@ -103,7 +107,14 @@ async def split_query(
                 f"Total results for price range {min_price} to {max_price} is greater than 400, so we need to split the query again."
             )
             # TODO: address what happens if we've split the query down to where our max and min price are the same, and we still have more than 400 results.
-            await split_query(location, status_type, min_price, max_price, fetch_params)
+            await split_query(
+                location,
+                status_type,
+                min_price,
+                max_price,
+                fetch_params,
+                soldInLast=kwargs.get("soldInLast", ""),
+            )
 
 
 async def get_zillow_search_params(county, status_type, **kwargs):
@@ -118,7 +129,7 @@ async def get_zillow_search_params(county, status_type, **kwargs):
         )
         return None
     logger.info(
-        f"Location: {location} | Status Type: {status_type} | Total Results: {total_results}"
+        f"Location: {location} | Status Type: {status_type} | Sold In Last: {kwargs.get('soldInLast', '')} | Total Results: {total_results}"
     )
     fetch_params = []
     if total_results > 400:

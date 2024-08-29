@@ -15,15 +15,15 @@ logging.basicConfig(
 )
 
 
-async def process_county(county_fips, county_data, status_type, sold_in_last=None):
+async def process_county(county_fips, county_data, status_type, soldInLast=None):
     try:
         # Get the queries for that location that will capture all the properties
         zillow_search_params = await get_zillow_search_params(
-            county_data, status_type, sold_in_last=sold_in_last
+            county_data, status_type, soldInLast=soldInLast
         )
         if not zillow_search_params:
             logger.warning(
-                f"No results found for {county_data['county_name']} County, {county_data['state_id']} with status_type {status_type} and sold_in_last {sold_in_last}"
+                f"No results found for {county_data['county_name']} County, {county_data['state_id']} with status_type {status_type} and soldInLast {soldInLast}"
             )
             return
 
@@ -53,9 +53,7 @@ async def run_property_services():
     for county_fips, county_data in tqdm(
         list(counties.items())[:5], desc="Processing Sold Properties"
     ):
-        await process_county(
-            county_fips, county_data, "RecentlySold", sold_in_last="90"
-        )
+        await process_county(county_fips, county_data, "RecentlySold", soldInLast="90")
 
     # Process ForSale properties
     for county_fips, county_data in tqdm(
