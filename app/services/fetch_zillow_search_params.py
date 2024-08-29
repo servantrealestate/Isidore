@@ -121,7 +121,10 @@ async def get_zillow_search_params(county, status_type, **kwargs):
     """
     Get the fetch parameters for Zillow API. There is a limit of 400 results per query, so if need be, this will split the query into multiple queries.
     """
-    location = f"{county['county_name']} County, {county['state_id']}"
+    if county["state_id"] != "LA":
+        location = f"{county['county_name']} County, {county['state_id']}"
+    else:
+        location = f"{county['county_name']} Parish, {county['state_id']}"
     total_results = await check_total_zillow_results(location, status_type, **kwargs)
     if total_results == 0:
         logger.warning(
