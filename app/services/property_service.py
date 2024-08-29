@@ -92,7 +92,7 @@ def get_or_create_properties(properties_data):
                         if property_data.get("dateSold")
                         else "NULL"
                     )
-                update_query = f"""
+                    update_query = f"""
                     UPDATE `{table_id}`
                     SET price = {property_data.get("price")},
                         listing_status = '{property_data.get("listingStatus")}',
@@ -114,7 +114,7 @@ def get_or_create_properties(properties_data):
                         has_image = {property_data.get("hasImage")}
                     WHERE zpid = {zpid}
                     """
-                client.query(update_query)
+                    client.query(update_query)
             else:
                 # Parse zip code from address using regex
                 address = property_data.get("address", "")

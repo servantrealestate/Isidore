@@ -17,13 +17,15 @@ async def check_total_zillow_results(location, status_type, **kwargs):
         "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
         "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
     }
+    if not kwargs.get("soldInLast"):
+        print("No soldInLast")
     querystring = {
         "location": location,
         "status_type": status_type,
         "home_type": "LotsLand",
-        "soldInLast": kwargs.get("soldInLast", ""),
-        "minPrice": kwargs.get("minPrice", ""),
-        "maxPrice": kwargs.get("maxPrice", ""),
+        "soldInLast": kwargs.get("soldInLast", "") or "",
+        "minPrice": kwargs.get("minPrice", "") or "",
+        "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     async with RateLimitedSession() as session:
         async with session.get(url, headers=headers, params=querystring) as response:
@@ -41,10 +43,10 @@ async def check_min_price(location, status_type, **kwargs):
         "location": location,
         "status_type": status_type,
         "home_type": "LotsLand",
-        "soldInLast": kwargs.get("soldInLast", ""),
+        "soldInLast": kwargs.get("soldInLast", "") or "",
         "sort": "price_low_high",
-        "minPrice": kwargs.get("minPrice", ""),
-        "maxPrice": kwargs.get("maxPrice", ""),
+        "minPrice": kwargs.get("minPrice", "") or "",
+        "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     async with RateLimitedSession() as session:
         async with session.get(url, headers=headers, params=querystring) as response:
@@ -62,10 +64,10 @@ async def check_max_price(location, status_type, **kwargs):
         "location": location,
         "status_type": status_type,
         "home_type": "LotsLand",
-        "soldInLast": kwargs.get("soldInLast", ""),
+        "soldInLast": kwargs.get("soldInLast", "") or "",
         "sort": "price_high_low",
-        "minPrice": kwargs.get("minPrice", ""),
-        "maxPrice": kwargs.get("maxPrice", ""),
+        "minPrice": kwargs.get("minPrice", "") or "",
+        "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     async with RateLimitedSession() as session:
         async with session.get(url, headers=headers, params=querystring) as response:
@@ -87,7 +89,7 @@ async def split_query(
             status_type,
             minPrice=min_price,
             maxPrice=max_price,
-            soldInLast=kwargs.get("soldInLast", ""),
+            soldInLast=kwargs.get("soldInLast", "") or "",
         )
         logger.info(
             f"Location: {location} | Status Type: {status_type} | Price Range: {min_price}-{max_price} | Total Results: {total_results_for_price_range}"
@@ -99,7 +101,7 @@ async def split_query(
                     "status_type": status_type,
                     "minPrice": min_price,
                     "maxPrice": max_price,
-                    "soldInLast": kwargs.get("soldInLast", ""),
+                    "soldInLast": kwargs.get("soldInLast", "") or "",
                 }
             )
         else:
@@ -143,7 +145,7 @@ async def get_zillow_search_params(county, status_type, **kwargs):
             {
                 "location": location,
                 "status_type": status_type,
-                "soldInLast": kwargs.get("soldInLast", ""),
+                "soldInLast": kwargs.get("soldInLast", "") or "",
             }
         )
     return fetch_params
