@@ -82,6 +82,11 @@ def get_or_create_properties(properties_data):
             if db_property["price"] != property_data.get("price") or db_property[
                 "listing_status"
             ] != property_data.get("listingStatus"):
+                date_sold_value = (
+                    f"'{datetime.fromtimestamp(property_data.get('dateSold') / 1000, timezone.utc).strftime('%Y-%m-%d')}'"
+                    if property_data.get("dateSold")
+                    else "NULL"
+                )
                 update_query = f"""
                 UPDATE `{table_id}`
                 SET price = {property_data.get("price")},
@@ -98,9 +103,7 @@ def get_or_create_properties(properties_data):
                     contingent_listing_type = '{property_data.get("contingentListingType")}',
                     rent_zestimate = {property_data.get("rentZestimate")},
                     days_on_zillow = {property_data.get("daysOnZillow")},
-                    date_sold = '{datetime.fromtimestamp(
-                        property_data.get("dateSold") / 1000, timezone.utc
-                    ).strftime("%Y-%m-%d")}',
+                    date_sold = {date_sold_value},
                     country = '{property_data.get("country")}',
                     currency = '{property_data.get("currency")}',
                     has_image = {property_data.get("hasImage")}
@@ -140,7 +143,9 @@ def get_or_create_properties(properties_data):
                     "days_on_zillow": property_data.get("daysOnZillow"),
                     "date_sold": datetime.fromtimestamp(
                         property_data.get("dateSold") / 1000, timezone.utc
-                    ).strftime("%Y-%m-%d"),
+                    ).strftime("%Y-%m-%d")
+                    if property_data.get("dateSold")
+                    else None,
                     "country": property_data.get("country"),
                     "currency": property_data.get("currency"),
                     "has_image": property_data.get("hasImage"),
