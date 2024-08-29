@@ -66,10 +66,8 @@ def get_or_create_properties(properties_data):
 
     # Batch query to get all properties at once
     query = f"SELECT * FROM `{table_id}` WHERE zpid IN ({zpid_str})"
-    logger.info(f"Executing batch query: {query}")
     query_job = client.query(query)
     results = {row["zpid"]: row for row in query_job.result()}
-    logger.info(f"Batch query results: {len(results)} properties found")
 
     for property_data in properties_data:
         zpid = int(property_data["zpid"])
@@ -103,9 +101,7 @@ def get_or_create_properties(properties_data):
                     has_image = {property_data.get("hasImage")}
                 WHERE zpid = {zpid}
                 """
-                logger.info(f"Executing update query for zpid {zpid}")
                 client.query(update_query)
-                logger.info(f"Updated property {zpid} in the database.")
         else:
             # Parse zip code from address using regex
             address = property_data.get("address", "")
