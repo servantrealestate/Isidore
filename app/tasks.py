@@ -8,6 +8,7 @@ from app.services.fetch_zillow_properties import fetch_properties_for_params_lis
 from app.services.property_service import get_or_create_properties
 import logging
 import asyncio
+from tqdm.asyncio import tqdm
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -27,7 +28,9 @@ async def run_property_services():
     counties = group_locations_by_county(locations)
 
     # Get Sold properties
-    for county_fips, county_data in counties.items():
+    for county_fips, county_data in tqdm(
+        counties.items(), desc="Processing Sold Properties"
+    ):
         try:
             # Get the queries for that location that will capture all the properties
             zillow_search_params = await get_zillow_search_params(
@@ -52,7 +55,9 @@ async def run_property_services():
             continue
 
     # Get ForSale properties
-    for county_fips, county_data in counties.items():
+    for county_fips, county_data in tqdm(
+        counties.items(), desc="Processing For Sale Properties"
+    ):
         try:
             # Get the queries for that location that will capture all the properties
             zillow_search_params = await get_zillow_search_params(

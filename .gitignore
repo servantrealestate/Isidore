@@ -18,3 +18,4 @@ project-guide.md
 *.sqlite
 
 properties-433820-d7d8d5ab2856.json
+*.log
