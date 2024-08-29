@@ -10,11 +10,12 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("debug.log")],
+    handlers=[logging.FileHandler("app.log")],
 )
 
 
 def find_county_by_name_and_state(counties, county_name, state_id):
+    county_name = county_name.replace("County", "").strip()
     for fips, county_data in counties.items():
         if (
             county_data["county_name"] == county_name
@@ -45,7 +46,6 @@ async def run_debugging():
 
     # List of problematic counties
     problematic_counties = [
-        {"county_name": "Golden Valley", "state_id": "MT"},
         {"county_name": "Granite County", "state_id": "MT"},
         # Add more problematic counties here
     ]
