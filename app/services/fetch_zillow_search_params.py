@@ -86,7 +86,7 @@ async def split_query(
             location, status_type, minPrice=min_price, maxPrice=max_price
         )
         logger.info(
-            f"Location: {location} | Price Range: {min_price}-{max_price} | Total Results: {total_results_for_price_range}"
+            f"Location: {location} | Status Type: {status_type} | Price Range: {min_price}-{max_price} | Total Results: {total_results_for_price_range}"
         )
         if total_results_for_price_range <= 400:
             fetch_params.append(
@@ -117,7 +117,9 @@ async def get_zillow_search_params(county, status_type, **kwargs):
             f"No results found for {location} with status_type {status_type} and sold_in_last {kwargs.get('soldInLast', '')}"
         )
         return None
-    logger.info(f"Location: {location} | Total Results: {total_results}")
+    logger.info(
+        f"Location: {location} | Status Type: {status_type} | Total Results: {total_results}"
+    )
     fetch_params = []
     if total_results > 400:
         min_price = await check_min_price(location, status_type, **kwargs)
