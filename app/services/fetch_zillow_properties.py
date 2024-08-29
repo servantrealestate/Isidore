@@ -4,7 +4,7 @@ from app.services.rapidapi_client import RateLimitedSession, RAPIDAPI_ZILLOW_API
 logger = logging.getLogger(__name__)
 
 
-async def fetch_zillow_properties(location, status_type, sold_in_last="", **kwargs):
+async def fetch_zillow_properties(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
 
     headers = {
@@ -18,7 +18,7 @@ async def fetch_zillow_properties(location, status_type, sold_in_last="", **kwar
         "home_type": "LotsLand",
         "minPrice": kwargs.get("minPrice", ""),
         "maxPrice": kwargs.get("maxPrice", ""),
-        "soldInLast": sold_in_last,
+        "soldInLast": kwargs.get("soldInLast", ""),
     }
 
     # Add any additional parameters from kwargs
@@ -39,13 +39,13 @@ async def fetch_zillow_properties(location, status_type, sold_in_last="", **kwar
                 try:
                     response_data = await response.json()
                     properties.extend(response_data.get("props", []))
-                    total_pages = response_data.get("totalPages", 1)
+                    total_pages = response_data.get("totalPages", 0)
                 except Exception as e:
                     logger.error(f"Error processing response: {e}")
                     break
 
                 logger.info(
-                    f"{status_type} | {response.status} | {location} | Page {current_page} of {total_pages} | MinPrice: {querystring.get('minPrice', 'N/A')} | MaxPrice: {querystring.get('maxPrice', 'N/A')}"
+                    f"{status_type} | {response.status} | {location} | Page {current_page} of {total_pages} | MinPrice: {querystring.get('minPrice', 'N/A')} | MaxPrice: {querystring.get('maxPrice', 'N/A')} | SoldInLast: {querystring.get('soldInLast', 'N/A')}"
                 )
 
                 current_page += 1

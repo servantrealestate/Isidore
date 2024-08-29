@@ -68,7 +68,9 @@ async def check_max_price(location, status_type, sold_in_last="", **kwargs):
             return response_data.get("props")[0].get("price")
 
 
-async def split_query(location, status_type, min_price, max_price, fetch_params):
+async def split_query(
+    location, status_type, min_price, max_price, fetch_params, sold_in_last=""
+):
     number_of_splits = 10
     price_splits = np.linspace(min_price, max_price, number_of_splits)
     price_splits = np.round(price_splits).astype(int)
@@ -88,6 +90,7 @@ async def split_query(location, status_type, min_price, max_price, fetch_params)
                     "status_type": status_type,
                     "minPrice": min_price,
                     "maxPrice": max_price,
+                    "soldInLast": sold_in_last,
                 }
             )
         else:
@@ -98,23 +101,26 @@ async def split_query(location, status_type, min_price, max_price, fetch_params)
             await split_query(location, status_type, min_price, max_price, fetch_params)
 
 
-async def get_zillow_search_params(county, status_type):
+async def get_zillow_search_params(county, status_type, sold_in_last=""):
     """
     Get the fetch parameters for Zillow API. There is a limit of 400 results per query, so if need be, this will split the query into multiple queries.
     """
     location = f"{county['county_name']} County, {county['state_id']}"
-    total_results = await check_total_zillow_results(location, status_type)
+    total_results = await check_total_zillow_results(
+        location, status_type, sold_in_last=sold_in_last
+    )
     logger.info(f"Location: {location} | Total Results: {total_results}")
     fetch_params = []
     if total_results > 400:
-        min_price = await check_min_price(location, status_type)
-        max_price = await check_max_price(location, status_type)
+        min_price = await check_min_price(location, status_type, sold_in_last)
+        max_price = await check_max_price(location, status_type, sold_in_last)
         await split_query(location, status_type, min_price, max_price, fetch_params)
     else:
         fetch_params.append(
             {
                 "location": location,
                 "status_type": status_type,
+                "soldInLast": sold_in_last,
             }
         )
     return fetch_params

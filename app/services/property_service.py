@@ -3,6 +3,7 @@ import logging
 import os
 import re
 from google.api_core.exceptions import NotFound
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def get_or_create_properties(properties_data):
             bigquery.SchemaField("contingent_listing_type", "STRING"),
             bigquery.SchemaField("rent_zestimate", "FLOAT"),
             bigquery.SchemaField("days_on_zillow", "FLOAT"),
-            bigquery.SchemaField("date_sold", "STRING"),
+            bigquery.SchemaField("date_sold", "DATE"),
             bigquery.SchemaField("country", "STRING"),
             bigquery.SchemaField("currency", "STRING"),
             bigquery.SchemaField("has_image", "BOOLEAN"),
@@ -94,7 +95,9 @@ def get_or_create_properties(properties_data):
                     contingent_listing_type = '{property_data.get("contingentListingType")}',
                     rent_zestimate = {property_data.get("rentZestimate")},
                     days_on_zillow = {property_data.get("daysOnZillow")},
-                    date_sold = '{property_data.get("dateSold")}',
+                    date_sold = '{datetime.fromtimestamp(
+                        property_data.get("dateSold") / 1000, timezone.utc
+                    ).strftime("%Y-%m-%d")}',
                     country = '{property_data.get("country")}',
                     currency = '{property_data.get("currency")}',
                     has_image = {property_data.get("hasImage")}
@@ -134,7 +137,9 @@ def get_or_create_properties(properties_data):
                     ),
                     "rent_zestimate": property_data.get("rentZestimate"),
                     "days_on_zillow": property_data.get("daysOnZillow"),
-                    "date_sold": property_data.get("dateSold"),
+                    "date_sold": datetime.fromtimestamp(
+                        property_data.get("dateSold") / 1000, timezone.utc
+                    ).strftime("%Y-%m-%d"),
                     "country": property_data.get("country"),
                     "currency": property_data.get("currency"),
                     "has_image": property_data.get("hasImage"),
