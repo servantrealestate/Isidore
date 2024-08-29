@@ -150,7 +150,6 @@ def get_or_create_properties(properties_data):
                     "zip_code": zip_code,
                 }
             )
-            logger.info(f"Added property with zpid {zpid} to rows_to_insert")
     if rows_to_insert:
         logger.info(f"Inserting {len(rows_to_insert)} new properties")
         errors = client.insert_rows_json(table_id, rows_to_insert)
