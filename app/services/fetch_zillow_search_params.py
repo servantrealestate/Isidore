@@ -109,6 +109,11 @@ async def get_zillow_search_params(county, status_type, sold_in_last=""):
     total_results = await check_total_zillow_results(
         location, status_type, sold_in_last=sold_in_last
     )
+    if total_results == 0:
+        logger.warning(
+            f"No results found for {location} with status_type {status_type} and sold_in_last {sold_in_last}"
+        )
+        return None
     logger.info(f"Location: {location} | Total Results: {total_results}")
     fetch_params = []
     if total_results > 400:

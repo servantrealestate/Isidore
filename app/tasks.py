@@ -33,6 +33,11 @@ async def run_property_services():
             zillow_search_params = await get_zillow_search_params(
                 county_data, "RecentlySold", sold_in_last="90"
             )
+            if not zillow_search_params:
+                logger.warning(
+                    f"No results found for {county_data['county_name']} County, {county_data['state_id']} with status_type RecentlySold and sold_in_last 90"
+                )
+                continue
             properties = await fetch_properties_for_params_list(zillow_search_params)
             for property in properties:
                 property["county_name"] = county_data["county_name"]
@@ -53,6 +58,11 @@ async def run_property_services():
             zillow_search_params = await get_zillow_search_params(
                 county_data, "ForSale"
             )
+            if not zillow_search_params:
+                logger.warning(
+                    f"No results found for {county_data['county_name']} County, {county_data['state_id']} with status_type RecentlySold and sold_in_last 90"
+                )
+                continue
             properties = await fetch_properties_for_params_list(zillow_search_params)
 
             # Verify the totalResultCount matches the total number of properties returned
