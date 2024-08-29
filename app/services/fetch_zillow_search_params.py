@@ -3,6 +3,11 @@ import numpy as np
 from app.services.rapidapi_client import RateLimitedSession, RAPIDAPI_ZILLOW_API_KEY
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log")],
+)
 
 
 async def check_total_zillow_results(location, status_type, sold_in_last="", **kwargs):

@@ -6,6 +6,11 @@ from google.api_core.exceptions import NotFound
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log")],
+)
 
 
 def get_or_create_properties(properties_data):

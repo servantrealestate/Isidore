@@ -6,6 +6,11 @@ import time
 from aiohttp_client_cache import CachedSession, SQLiteBackend
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log")],
+)
 
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")

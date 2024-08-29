@@ -2,6 +2,11 @@ import logging
 from app.services.rapidapi_client import RateLimitedSession, RAPIDAPI_ZILLOW_API_KEY
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.FileHandler("app.log")],
+)
 
 
 async def fetch_zillow_properties(location, status_type, **kwargs):
