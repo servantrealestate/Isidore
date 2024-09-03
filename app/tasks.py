@@ -1,5 +1,5 @@
 from app.services.fetch_locations import fetch_locations_from_google_sheet
-from app.services.process_locations import group_locations_by_county
+from app.services.process_locations import group_locations_by_zip
 from app.services.fetch_zillow_search_params import get_zillow_search_params
 from app.services.fetch_zillow_properties import fetch_properties_for_params_list
 from app.services.property_service import get_or_create_properties
@@ -15,51 +15,46 @@ logging.basicConfig(
 )
 
 
-async def process_county(county_fips, county_data, status_type, soldInLast=None):
+async def process_zip(zip_code, zip_data, status_type, soldInLast=None):
     try:
-        # Get the queries for that location that will capture all the properties
         zillow_search_params = await get_zillow_search_params(
-            county_data, status_type, soldInLast=soldInLast
+            zip_code, status_type, soldInLast=soldInLast
         )
         if not zillow_search_params:
             logger.warning(
-                f"No results found for {county_data['county_name']} County, {county_data['state_id']} with status_type {status_type} and soldInLast {soldInLast}"
+                f"No results found for {zip_code} with status_type {status_type} and soldInLast {soldInLast}"
             )
             return
 
         properties = await fetch_properties_for_params_list(zillow_search_params)
         for property in properties:
-            property["county_name"] = county_data["county_name"]
-            property["state_id"] = county_data["state_id"]
-            property["county_fips"] = county_fips
+            property["zip_code"] = zip_code
+            property["state_id"] = zip_data["state_id"]
 
         get_or_create_properties(properties)
     except Exception as e:
-        logger.error(
-            f"{status_type} properties for {county_data['county_name']} County, {county_data['state_id']}: {e}"
-        )
+        logger.error(f"{status_type} properties for {zip_code}: {e}")
 
 
 async def run_property_services():
     # Test URL
-    # sheet_url = "https://docs.google.com/spreadsheets/d/1WZMtAdgJCLo9pFAhBsszCRPZZDMX16Xtt25er92F48E/pub?output=csv"
+    sheet_url = "https://docs.google.com/spreadsheets/d/1WZMtAdgJCLo9pFAhBsszCRPZZDMX16Xtt25er92F48E/pub?output=csv"
     # Production URL
-    sheet_url = "https://docs.google.com/spreadsheets/d/1jGa8Y6UmdU1YAY2GbtKSNt80GggSkaEU5CvWAB2InBE/pub?gid=0&single=true&output=csv"
+    # sheet_url = "https://docs.google.com/spreadsheets/d/1jGa8Y6UmdU1YAY2GbtKSNt80GggSkaEU5CvWAB2InBE/pub?gid=0&single=true&output=csv"
 
     locations = await fetch_locations_from_google_sheet(sheet_url)
-    counties = group_locations_by_county(locations)
-
+    zip_codes = group_locations_by_zip(locations)
     # Process Sold properties
-    for county_fips, county_data in tqdm(
-        list(counties.items()), desc="Processing Sold Properties"
+    for zip_code, zip_data in tqdm(
+        list(zip_codes.items()), desc="Processing Sold Properties"
     ):
-        await process_county(county_fips, county_data, "RecentlySold", soldInLast="90")
+        await process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
 
     # Process ForSale properties
-    for county_fips, county_data in tqdm(
-        list(counties.items()), desc="Processing For Sale Properties"
+    for zip_code, zip_data in tqdm(
+        list(zip_codes.items()), desc="Processing For Sale Properties"
     ):
-        await process_county(county_fips, county_data, "ForSale")
+        await process_zip(zip_code, zip_data, "ForSale")
 
     return "Success"
 
