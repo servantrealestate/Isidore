@@ -76,7 +76,7 @@ async def check_max_price(location, status_type, **kwargs):
 async def split_query(
     location, status_type, min_price, max_price, fetch_params, **kwargs
 ):
-    number_of_splits = 10
+    number_of_splits = 3
     price_splits = np.linspace(min_price, max_price, number_of_splits)
     price_splits = np.round(price_splits).astype(int)
     for i in range(number_of_splits - 1):
