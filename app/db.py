@@ -1,16 +1,8 @@
-import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+DATABASE_URL = "sqlite:///./test.db"
 
-if ENVIRONMENT == "development":
-    PROJECT_ID = os.getenv("BIGQUERY_PROJECT_ID")
-    DATASET = os.getenv("BIGQUERY_DATASET")
-    DATABASE_URL = f"bigquery://{PROJECT_ID}/{DATASET}"
-else:
-    DATABASE_URL = os.getenv("DATABASE_URL")
-
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
