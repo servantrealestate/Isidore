@@ -92,7 +92,12 @@ async def split_query(
         logger.info(
             f"Location: {location} | Status Type: {status_type} | Price Range: {min_price}-{max_price} | Total Results: {total_results_for_price_range}"
         )
-        if total_results_for_price_range <= 400:
+        if total_results_for_price_range == 0:
+            logger.warning(
+                f"No results found for {location} with status_type {status_type} and soldInLast {kwargs.get('soldInLast', '')} and price range {min_price}-{max_price}"
+            )
+            continue
+        elif total_results_for_price_range <= 400:
             fetch_params.append(
                 {
                     "location": location,
