@@ -44,7 +44,7 @@ def get_or_create_properties(properties_data):
                     db_property.date_sold = (
                         datetime.fromtimestamp(
                             property_data.get("dateSold") / 1000, timezone.utc
-                        ).strftime("%Y-%m-%d")
+                        ).date()
                         if property_data.get("dateSold")
                         else None
                     )
@@ -86,7 +86,7 @@ def get_or_create_properties(properties_data):
                     days_on_zillow=property_data.get("daysOnZillow"),
                     date_sold=datetime.fromtimestamp(
                         property_data.get("dateSold") / 1000, timezone.utc
-                    ).strftime("%Y-%m-%d")
+                    ).date()
                     if property_data.get("dateSold")
                     else None,
                     country=property_data.get("country"),
