@@ -128,7 +128,12 @@ async def get_zillow_search_params(zip_code, status_type, **kwargs):
     """
     location = zip_code
     total_results = await check_total_zillow_results(location, status_type, **kwargs)
-    if total_results == 0:
+    if total_results is None:
+        logger.warning(
+            f"No results found for {location} with status_type {status_type} and sold_in_last {kwargs.get('soldInLast', '')}"
+        )
+        return None
+    elif total_results == 0:
         logger.warning(
             f"No results found for {location} with status_type {status_type} and sold_in_last {kwargs.get('soldInLast', '')}"
         )
