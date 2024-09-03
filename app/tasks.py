@@ -2,6 +2,7 @@ from app.services.fetch_locations import fetch_locations_from_google_sheet
 from app.services.process_locations import group_locations_by_zip
 from app.services.fetch_zillow_search_params import get_zillow_search_params
 from app.services.fetch_zillow_properties import fetch_properties_for_params_list
+from app.services.fetch_zillow_search_params import check_total_zillow_results
 from app.services.property_service import get_or_create_properties
 import logging
 import asyncio
@@ -27,6 +28,14 @@ async def process_zip(zip_code, zip_data, status_type, soldInLast=None):
             return
 
         properties = await fetch_properties_for_params_list(zillow_search_params)
+        total_results = await check_total_zillow_results(
+            zip_code, status_type, soldInLast=soldInLast
+        )
+
+        logger.info(
+            f"Location: {zip_code} | Status: {status_type} | Sold in Last: {soldInLast} | Expected Properties: {total_results} | Actual Properties: {len(properties)}"
+        )
+
         for property in properties:
             property["zip_code"] = zip_code
             property["state_id"] = zip_data["state_id"]
