@@ -46,7 +46,7 @@ async def run_debugging():
 
     # List of problematic counties
     problematic_counties = [
-        {"county_name": "Granite County", "state_id": "MT"},
+        {"county_name": "Lee", "state_id": "FL"},
         # Add more problematic counties here
     ]
 
