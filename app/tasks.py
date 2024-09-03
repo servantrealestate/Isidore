@@ -50,9 +50,32 @@ async def run_property_services():
     # sheet_url = "https://docs.google.com/spreadsheets/d/1WZMtAdgJCLo9pFAhBsszCRPZZDMX16Xtt25er92F48E/pub?output=csv"
     # Production URL
     sheet_url = "https://docs.google.com/spreadsheets/d/1jGa8Y6UmdU1YAY2GbtKSNt80GggSkaEU5CvWAB2InBE/pub?gid=0&single=true&output=csv"
-
+    # Define the state_ids we want to filter by
+    target_state_ids = {
+        "TX",  # Texas
+        "NC",  # North Carolina
+        "AL",  # Alabama
+        "SC",  # South Carolina
+        "TN",  # Tennessee
+        "GA",  # Georgia
+        "LA",  # Louisiana
+        "KY",  # Kentucky
+        "MS",  # Mississippi
+        "CA",  # California
+        "VA",  # Virginia
+        "FL",  # Florida
+    }
+    # Fetch locations from Google Sheet
     locations = await fetch_locations_from_google_sheet(sheet_url)
-    zip_codes = group_locations_by_zip(locations)
+
+    # Filter locations based on the target state_ids
+    filtered_locations = [
+        location for location in locations if location["state_id"] in target_state_ids
+    ]
+
+    # Group filtered locations by zip code
+    zip_codes = group_locations_by_zip(filtered_locations)
+
     # Process Sold properties
     for zip_code, zip_data in tqdm(
         list(zip_codes.items()), desc="Processing Sold Properties"
