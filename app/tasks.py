@@ -51,42 +51,32 @@ async def run_property_services():
     # Production URL
     sheet_url = "https://docs.google.com/spreadsheets/d/1jGa8Y6UmdU1YAY2GbtKSNt80GggSkaEU5CvWAB2InBE/pub?gid=0&single=true&output=csv"
     # Define the state_ids we want to filter by
-    target_state_ids = {
-        "TX",  # Texas
-        "NC",  # North Carolina
-        "AL",  # Alabama
-        "SC",  # South Carolina
-        "TN",  # Tennessee
-        "GA",  # Georgia
-        "LA",  # Louisiana
-        "KY",  # Kentucky
-        "MS",  # Mississippi
-        "CA",  # California
-        "VA",  # Virginia
-        "FL",  # Florida
-    }
+
     # Fetch locations from Google Sheet
     locations = await fetch_locations_from_google_sheet(sheet_url)
 
-    # Filter locations based on the target state_ids
-    filtered_locations = [
-        location for location in locations if location["state_id"] in target_state_ids
-    ]
-
     # Group filtered locations by zip code
-    zip_codes = group_locations_by_zip(filtered_locations)
+    zip_codes = group_locations_by_zip(locations)
+
+    semaphore = asyncio.Semaphore(10)  # Limit to 10 concurrent tasks
+
+    async def sem_process_zip(zip_code, zip_data, status_type, soldInLast=None):
+        async with semaphore:
+            await process_zip(zip_code, zip_data, status_type, soldInLast)
 
     # Process Sold properties
-    for zip_code, zip_data in tqdm(
-        list(zip_codes.items()), desc="Processing Sold Properties"
-    ):
-        await process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
+    sold_tasks = [
+        sem_process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
+        for zip_code, zip_data in zip_codes.items()
+    ]
+    await tqdm.gather(*sold_tasks, desc="Processing Sold Properties")
 
     # Process ForSale properties
-    for zip_code, zip_data in tqdm(
-        list(zip_codes.items()), desc="Processing For Sale Properties"
-    ):
-        await process_zip(zip_code, zip_data, "ForSale")
+    for_sale_tasks = [
+        sem_process_zip(zip_code, zip_data, "ForSale")
+        for zip_code, zip_data in zip_codes.items()
+    ]
+    await tqdm.gather(*for_sale_tasks, desc="Processing For Sale Properties")
 
     return "Success"
 
