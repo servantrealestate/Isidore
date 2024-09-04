@@ -1,26 +1,33 @@
-from app.db import engine
-from app.models import Base, Property  # NOQA: F401
-from sqlalchemy import text
+import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from sqlalchemy_utils import database_exists, create_database
+from app.db import engine, DATABASE_URL
+from app.models import Base
 
-# Check database connection
-try:
-    with engine.connect() as connection:
-        print("Database connection successful.")
-        result = connection.execute(
-            text("SELECT name FROM sqlite_master WHERE type='table';")
+# Create the database if it doesn't exist
+if not database_exists(engine.url):
+    try:
+        # Connect to PostgreSQL server
+        psql_conn = psycopg2.connect(
+            dbname="postgres", user="work", host="localhost", password=""
         )
-        tables = result.fetchall()
-        print(f"Existing tables before creation: {tables}")
-except Exception as e:
-    print(f"Database connection failed: {e}")
+        psql_conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        psql_cursor = psql_conn.cursor()
 
-# Drop all tables
+        # Create the database
+        psql_cursor.execute("CREATE DATABASE properties")
+
+        psql_cursor.close()
+        psql_conn.close()
+
+        print("Database 'properties' created successfully.")
+    except Exception as e:
+        print(f"Error creating database: {e}")
+        exit(1)
+
+# Now proceed with table creation
 try:
-    Base.metadata.drop_all(engine)
-    print("Existing tables dropped successfully.")
+    Base.metadata.create_all(engine)
+    print("Tables created successfully.")
 except Exception as e:
-    print(f"Error dropping tables: {e}")
-
-# Create tables
-Base.metadata.create_all(engine)
-print("Tables created successfully.")
+    print(f"Error creating tables: {e}")

@@ -1,14 +1,11 @@
-import sqlite3
+import psycopg2
 import csv
-
-# Path to the SQLite database
-db_path = "test.db"
 
 # Path to the output CSV file
 csv_path = "/Users/work/Desktop/properties.csv"
 
-# Connect to the SQLite database
-conn = sqlite3.connect(db_path)
+# Connect to the PostgreSQL database
+conn = psycopg2.connect(dbname="properties", user="work", password="", host="localhost")
 cursor = conn.cursor()
 
 # Query to select all data from the properties table
@@ -21,7 +18,7 @@ cursor.execute(query)
 rows = cursor.fetchall()
 
 # Get the column names from the cursor description
-column_names = [description[0] for description in cursor.description]
+column_names = [desc[0] for desc in cursor.description]
 
 # Write the data to a CSV file
 with open(csv_path, "w", newline="") as csv_file:
