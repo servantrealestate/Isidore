@@ -119,6 +119,10 @@ def get_or_create_properties(properties_data):
         logger.info(
             f"Zip Code: {zip_code}, State ID: {state_id}, Listing Status: {listing_status}, Num of Properties to Check or Write: {number_of_properties}, Num of Properties Checked or Written: {number_of_properties_check}"
         )
+        if number_of_properties > number_of_properties_check:
+            logger.error(
+                f"Zip Code: {zip_code}, State ID: {state_id}, Listing Status: {listing_status}, Number of properties to check or write: {number_of_properties} greater than number of properties checked or written: {number_of_properties_check}. There may have been a write error."
+            )
     except Exception as e:
         logger.error(f"Error in get_or_create_properties: {e}")
     finally:
