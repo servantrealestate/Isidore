@@ -14,7 +14,13 @@ logging.basicConfig(
 
 
 def get_or_create_properties(properties_data):
-    logger.info("Starting get_or_create_properties")
+    zip_code = properties_data[0]["zip_code"]
+    state_id = properties_data[0]["state_id"]
+    listing_status = properties_data[0]["listingStatus"]
+    number_of_properties = len(properties_data)
+    logger.info(
+        f"Zip Code: {zip_code}, State ID: {state_id}, Listing Status: {listing_status}, Number of Properties: {number_of_properties}"
+    )
     db: Session = SessionLocal()
     try:
         for property_data in properties_data:
@@ -103,7 +109,16 @@ def get_or_create_properties(properties_data):
                 )
                 db.add(new_property)
                 db.commit()
-        logger.info("Completed get_or_create_properties")
+        number_of_properties_check = (
+            db.query(Property)
+            .filter(
+                Property.zip_code == zip_code, Property.listing_status == listing_status
+            )
+            .count()
+        )
+        logger.info(
+            f"Zip Code: {zip_code}, State ID: {state_id}, Listing Status: {listing_status}, Num of Properties to Check or Write: {number_of_properties}, Num of Properties Checked or Written: {number_of_properties_check}"
+        )
     except Exception as e:
         logger.error(f"Error in get_or_create_properties: {e}")
     finally:
