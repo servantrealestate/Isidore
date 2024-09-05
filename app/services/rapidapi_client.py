@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler("app.log")],
 )
 
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
@@ -26,23 +26,25 @@ class RateLimiter:
     async def acquire(self):
         async with self.lock:
             now = time.monotonic()
-            time_since_refill = now - self.last_refill_time
-
-            # Refill the token bucket
-            new_tokens = time_since_refill * (self.rate / self.per)
-            self.tokens = min(self.rate, self.tokens + new_tokens)
-            self.last_refill_time = now
-
-            if self.tokens > self.rate:
-                self.tokens = self.rate
-            if self.tokens < 1:
-                wait_time = (1 - self.tokens) * (self.per / self.rate)
+            if self.tokens <= 1:
+                wait_time = self.per
                 logger.warning(
                     f"Rate limit reached. Waiting for {wait_time:.2f} seconds..."
                 )
                 await asyncio.sleep(wait_time)
 
             self.tokens -= 1
+            return now
+
+    async def release(self, acquire_time):
+        async with self.lock:
+            now = time.monotonic()
+            time_since_acquire = now - acquire_time
+
+            # Refill the token bucket
+            new_tokens = time_since_acquire * (self.rate / self.per)
+            self.tokens = min(self.rate, self.tokens + new_tokens)
+            self.last_refill_time = now
 
 
 class RateLimitedSession:
@@ -64,9 +66,9 @@ class RateLimitedSession:
             "x-rapidapi-key": RAPIDAPI_ZILLOW_API_KEY,
             "x-rapidapi-host": "zillow69.p.rapidapi.com",
         }
-        logger.info(f"Fetching URL: {url}, params: {params}")
+        logger.debug(f"Fetching URL: {url}, params: {params}")
         try:
-            await self.rate_limiter.acquire()
+            acquire_time = await self.rate_limiter.acquire()
             async with self.session.get(
                 url, headers=headers, params=params
             ) as response:
@@ -78,6 +80,8 @@ class RateLimitedSession:
         except ClientError as e:
             logger.error(f"Error fetching URL: {url}. Error: {str(e)}")
             raise
+        finally:
+            await self.rate_limiter.release(acquire_time)
 
     async def __aenter__(self):
         await self.ensure_session()

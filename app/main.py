@@ -7,7 +7,7 @@ from app.services.property_db_service import get_or_create_properties
 from app.services.rapidapi_client import RateLimiter, RateLimitedSession
 import logging
 import asyncio
-from tqdm.asyncio import tqdm
+from tqdm.asyncio import tqdm_asyncio
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -61,7 +61,7 @@ async def run_property_services():
     # Group filtered locations by zip code
     zip_codes = create_zip_code_dicts(locations)
 
-    rate_limiter = RateLimiter(rate=4, per=1)  # 4 requests per second
+    rate_limiter = RateLimiter(rate=6, per=1)  #  requests per second
     async with RateLimitedSession(rate_limiter) as session:
         # Process Sold properties
         semaphore = asyncio.Semaphore(10)  # Limit to 1 concurrent task
@@ -74,14 +74,16 @@ async def run_property_services():
             sem_process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
             for zip_code, zip_data in zip_codes.items()
         ]
-        await asyncio.gather(*sold_tasks)
+        await tqdm_asyncio.gather(*sold_tasks, desc="Processing Sold Properties")
 
         # Process ForSale properties
         for_sale_tasks = [
             sem_process_zip(zip_code, zip_data, "ForSale")
             for zip_code, zip_data in zip_codes.items()
         ]
-        await asyncio.gather(*for_sale_tasks)
+        await tqdm_asyncio.gather(
+            *for_sale_tasks, desc="Processing For Sale Properties"
+        )
 
     return "Success"
 
