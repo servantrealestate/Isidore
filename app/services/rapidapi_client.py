@@ -18,7 +18,6 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 class RateLimiter:
     def __init__(self, rate: int, per: float):
         self.rate = rate
-        self.allowance = rate
         self.per = per
         self.tokens = rate
         self.last_refill_time = time.monotonic()
@@ -34,10 +33,8 @@ class RateLimiter:
             self.tokens = min(self.rate, self.tokens + new_tokens)
             self.last_refill_time = now
 
-            if self.allowance > self.rate:
-                self.allowance = self.rate
-            if self.allowance < 1:
-                self.allowance = 0
+            if self.tokens > self.rate:
+                self.tokens = self.rate
             if self.tokens < 1:
                 wait_time = (1 - self.tokens) * (self.per / self.rate)
                 logger.warning(

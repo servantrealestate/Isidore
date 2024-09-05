@@ -61,10 +61,10 @@ async def run_property_services():
     # Group filtered locations by zip code
     zip_codes = create_zip_code_dicts(locations)
 
-    rate_limiter = RateLimiter(rate=1, per=1)  # 1 request per second
+    rate_limiter = RateLimiter(rate=4, per=1)  # 4 requests per second
     async with RateLimitedSession(rate_limiter) as session:
         # Process Sold properties
-        semaphore = asyncio.Semaphore(1)  # Limit to 1 concurrent task
+        semaphore = asyncio.Semaphore(10)  # Limit to 1 concurrent task
 
         async def sem_process_zip(zip_code, zip_data, status_type, soldInLast=None):
             async with semaphore:
