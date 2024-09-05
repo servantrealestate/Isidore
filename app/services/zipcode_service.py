@@ -1,7 +1,7 @@
 import collections
 
 
-def group_locations_by_zip(locations):
+def create_zip_code_dicts(locations):
     zip_dict = collections.defaultdict(lambda: {"zip_code": "", "state_id": ""})
 
     for location in locations:

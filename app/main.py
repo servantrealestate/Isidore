@@ -1,9 +1,9 @@
-from app.services.fetch_locations import fetch_locations_from_google_sheet
-from app.services.process_locations import group_locations_by_zip
-from app.services.fetch_zillow_search_params import get_zillow_search_params
-from app.services.fetch_zillow_properties import fetch_properties_for_params_list
-from app.services.fetch_zillow_search_params import check_total_zillow_results
-from app.services.property_service import get_or_create_properties
+from app.services.locations_from_gsheet_service import fetch_locations_from_google_sheet
+from app.services.zipcode_service import create_zip_code_dicts
+from app.services.zillow_search_params_service import get_zillow_search_params
+from app.services.zillow_properties_service import fetch_properties_for_params_list
+from app.services.zillow_search_params_service import get_zillow_total_results
+from app.services.property_db_service import get_or_create_properties
 import logging
 import asyncio
 from tqdm.asyncio import tqdm
@@ -28,7 +28,7 @@ async def process_zip(zip_code, zip_data, status_type, soldInLast=None):
             return
 
         properties = await fetch_properties_for_params_list(zillow_search_params)
-        total_results = await check_total_zillow_results(
+        total_results = await get_zillow_total_results(
             zip_code, status_type, soldInLast=soldInLast
         )
 
@@ -40,7 +40,8 @@ async def process_zip(zip_code, zip_data, status_type, soldInLast=None):
             property["zip_code"] = zip_code
             property["state_id"] = zip_data["state_id"]
 
-        get_or_create_properties(properties)
+        if len(properties) > 0:
+            get_or_create_properties(properties)
     except Exception as e:
         logger.error(f"{status_type} properties for {zip_code}: {e}")
 
@@ -55,7 +56,7 @@ async def run_property_services():
     locations = await fetch_locations_from_google_sheet(sheet_url)
 
     # Group filtered locations by zip code
-    zip_codes = group_locations_by_zip(locations)
+    zip_codes = create_zip_code_dicts(locations)
 
     semaphore = asyncio.Semaphore(10)  # Limit to 10 concurrent tasks
 

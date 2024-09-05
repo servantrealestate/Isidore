@@ -10,7 +10,7 @@ logging.basicConfig(
 )
 
 
-async def check_total_zillow_results(location, status_type, **kwargs):
+async def get_zillow_total_results(location, status_type, **kwargs):
     logger.debug(f"Received kwargs: {kwargs}")
     url = "https://zillow69.p.rapidapi.com/search"
     headers = {
@@ -31,7 +31,7 @@ async def check_total_zillow_results(location, status_type, **kwargs):
             return response_data.get("totalResultCount")
 
 
-async def check_min_price(location, status_type, **kwargs):
+async def get_min_price(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
@@ -52,7 +52,7 @@ async def check_min_price(location, status_type, **kwargs):
             return response_data.get("props")[0].get("price")
 
 
-async def check_max_price(location, status_type, **kwargs):
+async def get_max_price(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
     headers = {
         "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
@@ -73,7 +73,7 @@ async def check_max_price(location, status_type, **kwargs):
             return response_data.get("props")[0].get("price")
 
 
-async def split_query(
+async def split_price_query(
     location, status_type, min_price, max_price, fetch_params, **kwargs
 ):
     number_of_splits = 3
@@ -82,7 +82,7 @@ async def split_query(
     for i in range(number_of_splits - 1):
         min_price = max(int(price_splits[i]) - 1, 0)  # Ensure min_price is not negative
         max_price = int(price_splits[i + 1])
-        total_results_for_price_range = await check_total_zillow_results(
+        total_results_for_price_range = await get_zillow_total_results(
             location,
             status_type,
             minPrice=min_price,
@@ -112,7 +112,7 @@ async def split_query(
                 f"Total results for price range {min_price} to {max_price} is greater than 400, so we need to split the query again."
             )
             # TODO: address what happens if we've split the query down to where our max and min price are the same, and we still have more than 400 results.
-            await split_query(
+            await split_price_query(
                 location,
                 status_type,
                 min_price,
@@ -127,7 +127,7 @@ async def get_zillow_search_params(zip_code, status_type, **kwargs):
     Get the fetch parameters for Zillow API. There is a limit of 400 results per query, so if need be, this will split the query into multiple queries.
     """
     location = zip_code
-    total_results = await check_total_zillow_results(location, status_type, **kwargs)
+    total_results = await get_zillow_total_results(location, status_type, **kwargs)
     if total_results is None:
         logger.warning(
             f"No results found for {location} with status_type {status_type} and sold_in_last {kwargs.get('soldInLast', '')}"
@@ -143,9 +143,9 @@ async def get_zillow_search_params(zip_code, status_type, **kwargs):
     )
     fetch_params = []
     if total_results > 400:
-        min_price = await check_min_price(location, status_type, **kwargs)
-        max_price = await check_max_price(location, status_type, **kwargs)
-        await split_query(
+        min_price = await get_min_price(location, status_type, **kwargs)
+        max_price = await get_max_price(location, status_type, **kwargs)
+        await split_price_query(
             location, status_type, min_price, max_price, fetch_params, **kwargs
         )
     else:
