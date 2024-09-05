@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from app.services.rapidapi_client import RateLimitedSession, RAPIDAPI_ZILLOW_API_KEY
+from app.services.rapidapi_client import fetch_from_rapidapi
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -13,10 +13,6 @@ logging.basicConfig(
 async def get_zillow_total_results(location, status_type, **kwargs):
     logger.debug(f"Received kwargs: {kwargs}")
     url = "https://zillow69.p.rapidapi.com/search"
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
-        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
-    }
     querystring = {
         "location": location,
         "status_type": status_type,
@@ -25,18 +21,12 @@ async def get_zillow_total_results(location, status_type, **kwargs):
         "minPrice": kwargs.get("minPrice", "") or "",
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
-    async with RateLimitedSession() as session:
-        async with session.get(url, headers=headers, params=querystring) as response:
-            response_data = await response.json()
-            return response_data.get("totalResultCount")
+    response_data = await fetch_from_rapidapi(url, querystring)
+    return response_data.get("totalResultCount")
 
 
 async def get_min_price(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
-        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
-    }
     querystring = {
         "location": location,
         "status_type": status_type,
@@ -46,18 +36,12 @@ async def get_min_price(location, status_type, **kwargs):
         "minPrice": kwargs.get("minPrice", "") or "",
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
-    async with RateLimitedSession() as session:
-        async with session.get(url, headers=headers, params=querystring) as response:
-            response_data = await response.json()
-            return response_data.get("props")[0].get("price")
+    response_data = await fetch_from_rapidapi(url, querystring)
+    return response_data.get("props")[0].get("price")
 
 
 async def get_max_price(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
-        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
-    }
     querystring = {
         "location": location,
         "status_type": status_type,
@@ -67,10 +51,8 @@ async def get_max_price(location, status_type, **kwargs):
         "minPrice": kwargs.get("minPrice", "") or "",
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
-    async with RateLimitedSession() as session:
-        async with session.get(url, headers=headers, params=querystring) as response:
-            response_data = await response.json()
-            return response_data.get("props")[0].get("price")
+    response_data = await fetch_from_rapidapi(url, querystring)
+    return response_data.get("props")[0].get("price")
 
 
 async def split_price_query(

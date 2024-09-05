@@ -1,5 +1,5 @@
 import logging
-from app.services.rapidapi_client import RateLimitedSession, RAPIDAPI_ZILLOW_API_KEY
+from app.services.rapidapi_client import fetch_from_rapidapi
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -11,11 +11,6 @@ logging.basicConfig(
 
 async def fetch_zillow_properties(location, status_type, **kwargs):
     url = "https://zillow69.p.rapidapi.com/search"
-
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
-        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
-    }
 
     querystring = {
         "location": location,
@@ -35,25 +30,21 @@ async def fetch_zillow_properties(location, status_type, **kwargs):
     current_page = 1
     total_pages = 1
 
-    async with RateLimitedSession() as session:
-        while current_page <= total_pages:
-            querystring["page"] = current_page
-            async with session.get(
-                url, headers=headers, params=querystring
-            ) as response:
-                try:
-                    response_data = await response.json()
-                    properties.extend(response_data.get("props", []))
-                    total_pages = response_data.get("totalPages", 0)
-                except Exception as e:
-                    logger.error(f"Error processing response: {e}")
-                    break
+    while current_page <= total_pages:
+        querystring["page"] = current_page
+        try:
+            response_data = await fetch_from_rapidapi(url, querystring)
+            properties.extend(response_data.get("props", []))
+            total_pages = response_data.get("totalPages", 0)
+        except Exception as e:
+            logger.error(f"Error processing response: {e}")
+            break
 
-                logger.info(
-                    f"{status_type} | {response.status} | {location} | Page {current_page} of {total_pages} | MinPrice: {querystring.get('minPrice', 'N/A')} | MaxPrice: {querystring.get('maxPrice', 'N/A')} | SoldInLast: {querystring.get('soldInLast', 'N/A')}"
-                )
+        logger.info(
+            f"{status_type} | Page {current_page} of {total_pages} | MinPrice: {querystring.get('minPrice', 'N/A')} | MaxPrice: {querystring.get('maxPrice', 'N/A')} | SoldInLast: {querystring.get('soldInLast', 'N/A')}"
+        )
 
-                current_page += 1
+        current_page += 1
 
     return properties
 

@@ -53,7 +53,7 @@ class RateLimitedSession:
                 **self.kwargs,
             )
         else:
-            self.session = aiohttp.ClientSession(*self.args, **self.kwargs)
+            self.session = aiohttp.ClientSession(*self.args, **kwargs)
 
     async def __aenter__(self):
         return self.session
@@ -74,3 +74,14 @@ class RateLimitedSession:
         else:
             await rate_limiter.acquire()
             return await self.session.get(*args, **kwargs)
+
+
+async def fetch_from_rapidapi(url, params):
+    headers = {
+        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
+        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
+    }
+    async with RateLimitedSession() as session:
+        async with session.get(url, headers=headers, params=params) as response:
+            response_data = await response.json()
+            return response_data
