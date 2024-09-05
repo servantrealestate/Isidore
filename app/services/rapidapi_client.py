@@ -18,24 +18,34 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 class RateLimiter:
     def __init__(self, rate: int, per: float):
         self.rate = rate
+        self.allowance = rate
         self.per = per
-        self.semaphore = asyncio.Semaphore(1)
-        self.last_request_time = 0
+        self.tokens = rate
+        self.last_refill_time = time.monotonic()
+        self.lock = asyncio.Lock()
 
     async def acquire(self):
-        async with self.semaphore:
+        async with self.lock:
             now = time.monotonic()
-            time_since_last_request = now - self.last_request_time
-            if time_since_last_request < self.per:
-                wait_time = self.per - time_since_last_request
+            time_since_refill = now - self.last_refill_time
+
+            # Refill the token bucket
+            new_tokens = time_since_refill * (self.rate / self.per)
+            self.tokens = min(self.rate, self.tokens + new_tokens)
+            self.last_refill_time = now
+
+            if self.allowance > self.rate:
+                self.allowance = self.rate
+            if self.allowance < 1:
+                self.allowance = 0
+            if self.tokens < 1:
+                wait_time = (1 - self.tokens) * (self.per / self.rate)
                 logger.warning(
                     f"Rate limit reached. Waiting for {wait_time:.2f} seconds..."
                 )
                 await asyncio.sleep(wait_time)
-            self.last_request_time = time.monotonic()
-            logger.info(
-                f"Request allowed. Time since last request: {time_since_last_request:.2f} seconds"
-            )
+
+            self.tokens -= 1
 
 
 class RateLimitedSession:
