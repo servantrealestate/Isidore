@@ -86,7 +86,7 @@ async def split_price_query(
                 f"No results found for {location} with status_type {status_type} and soldInLast {kwargs.get('soldInLast', '')} and price range {min_price}-{max_price}"
             )
             continue
-        elif total_results_for_price_range <= 400:
+        elif total_results_for_price_range <= 820:
             fetch_params.append(
                 {
                     "location": location,
@@ -98,9 +98,9 @@ async def split_price_query(
             )
         else:
             logger.info(
-                f"Total results for price range {min_price} to {max_price} is greater than 400, so we need to split the query again."
+                f"Total results for price range {min_price} to {max_price} is greater than 820, so we need to split the query again."
             )
-            # TODO: address what happens if we've split the query down to where our max and min price are the same, and we still have more than 400 results.
+            # TODO: address what happens if we've split the query down to where our max and min price are the same, and we still have more than 820 results.
             await split_price_query(
                 location,
                 status_type,
@@ -113,7 +113,7 @@ async def split_price_query(
 
 async def get_zillow_search_params(zip_code, status_type, **kwargs):
     """
-    Get the fetch parameters for Zillow API. There is a limit of 400 results per query, so if need be, this will split the query into multiple queries.
+    Get the fetch parameters for Zillow API. There is a limit of 820 results per query, so if need be, this will split the query into multiple queries.
     """
     location = zip_code
     total_results = await get_zillow_total_results(location, status_type, **kwargs)
@@ -131,7 +131,7 @@ async def get_zillow_search_params(zip_code, status_type, **kwargs):
         f"Location: {location} | Status Type: {status_type} | Sold In Last: {kwargs.get('soldInLast', '')} | Total Results: {total_results}"
     )
     fetch_params = []
-    if total_results > 400:
+    if total_results > 820:
         min_price = await get_min_price(location, status_type, **kwargs)
         max_price = await get_max_price(location, status_type, **kwargs)
         await split_price_query(
