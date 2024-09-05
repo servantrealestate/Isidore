@@ -4,6 +4,7 @@ from app.services.zillow_search_params_service import get_zillow_search_params
 from app.services.zillow_properties_service import fetch_properties_for_params_list
 from app.services.zillow_search_params_service import get_zillow_total_results
 from app.services.property_db_service import get_or_create_properties
+from app.services.rapidapi_client import RateLimiter, RateLimitedSession
 import logging
 import asyncio
 from tqdm.asyncio import tqdm
@@ -16,10 +17,10 @@ logging.basicConfig(
 )
 
 
-async def process_zip(zip_code, zip_data, status_type, soldInLast=None):
+async def process_zip(zip_code, zip_data, status_type, soldInLast=None, session=None):
     try:
         zillow_search_params = await get_zillow_search_params(
-            zip_code, status_type, soldInLast=soldInLast
+            zip_code, status_type, soldInLast=soldInLast, session=session
         )
         if not zillow_search_params:
             logger.warning(
@@ -27,9 +28,11 @@ async def process_zip(zip_code, zip_data, status_type, soldInLast=None):
             )
             return
 
-        properties = await fetch_properties_for_params_list(zillow_search_params)
+        properties = await fetch_properties_for_params_list(
+            zillow_search_params, session=session
+        )
         total_results = await get_zillow_total_results(
-            zip_code, status_type, soldInLast=soldInLast
+            zip_code, status_type, soldInLast=soldInLast, session=session
         )
 
         logger.info(
@@ -58,25 +61,27 @@ async def run_property_services():
     # Group filtered locations by zip code
     zip_codes = create_zip_code_dicts(locations)
 
-    semaphore = asyncio.Semaphore(10)  # Limit to 10 concurrent tasks
+    rate_limiter = RateLimiter(rate=1, per=1)  # 1 request per second
+    async with RateLimitedSession(rate_limiter) as session:
+        # Process Sold properties
+        semaphore = asyncio.Semaphore(1)  # Limit to 1 concurrent task
 
-    async def sem_process_zip(zip_code, zip_data, status_type, soldInLast=None):
-        async with semaphore:
-            await process_zip(zip_code, zip_data, status_type, soldInLast)
+        async def sem_process_zip(zip_code, zip_data, status_type, soldInLast=None):
+            async with semaphore:
+                await process_zip(zip_code, zip_data, status_type, soldInLast, session)
 
-    # Process Sold properties
-    sold_tasks = [
-        sem_process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
-        for zip_code, zip_data in zip_codes.items()
-    ]
-    await tqdm.gather(*sold_tasks, desc="Processing Sold Properties")
+        sold_tasks = [
+            sem_process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
+            for zip_code, zip_data in zip_codes.items()
+        ]
+        await asyncio.gather(*sold_tasks)
 
-    # Process ForSale properties
-    for_sale_tasks = [
-        sem_process_zip(zip_code, zip_data, "ForSale")
-        for zip_code, zip_data in zip_codes.items()
-    ]
-    await tqdm.gather(*for_sale_tasks, desc="Processing For Sale Properties")
+        # Process ForSale properties
+        for_sale_tasks = [
+            sem_process_zip(zip_code, zip_data, "ForSale")
+            for zip_code, zip_data in zip_codes.items()
+        ]
+        await asyncio.gather(*for_sale_tasks)
 
     return "Success"
 

@@ -1,15 +1,14 @@
-import aiohttp
 import os
 import logging
 import asyncio
 import time
-from aiohttp_client_cache import CachedSession, SQLiteBackend
+from aiohttp import ClientSession, ClientError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("app.log")],
+    handlers=[logging.FileHandler("app.log"), logging.StreamHandler()],
 )
 
 RAPIDAPI_ZILLOW_API_KEY = os.getenv("RAPIDAPI_ZILLOW_API_KEY")
@@ -17,71 +16,65 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 
 class RateLimiter:
-    def __init__(self, rate, per):
+    def __init__(self, rate: int, per: float):
         self.rate = rate
         self.per = per
-        self.allowance = rate
-        self.last_check = time.monotonic()
+        self.semaphore = asyncio.Semaphore(1)
+        self.last_request_time = 0
 
     async def acquire(self):
-        current = time.monotonic()
-        time_passed = current - self.last_check
-        self.last_check = current
-        self.allowance += time_passed * (self.rate / self.per)
-
-        if self.allowance > self.rate:
-            self.allowance = self.rate
-
-        if self.allowance < 1.0:
-            await asyncio.sleep((1.0 - self.allowance) * (self.per / self.rate))
-            self.allowance = 0
-        else:
-            self.allowance -= 1.0
-
-
-rate_limiter = RateLimiter(4, 1)  # 4 requests per second
+        async with self.semaphore:
+            now = time.monotonic()
+            time_since_last_request = now - self.last_request_time
+            if time_since_last_request < self.per:
+                wait_time = self.per - time_since_last_request
+                logger.warning(
+                    f"Rate limit reached. Waiting for {wait_time:.2f} seconds..."
+                )
+                await asyncio.sleep(wait_time)
+            self.last_request_time = time.monotonic()
+            logger.info(
+                f"Request allowed. Time since last request: {time_since_last_request:.2f} seconds"
+            )
 
 
 class RateLimitedSession:
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs
-        if ENVIRONMENT == "development":
-            self.session = CachedSession(
-                cache=SQLiteBackend("cache.sqlite", expire_after=86400),  # 24 hours
-                *self.args,
-                **self.kwargs,
-            )
-        else:
-            self.session = aiohttp.ClientSession(*self.args, **kwargs)
+    def __init__(self, rate_limiter: RateLimiter):
+        self.rate_limiter = rate_limiter
+        self.session = None
+
+    async def ensure_session(self):
+        if self.session is None or self.session.closed:
+            self.session = ClientSession()
+
+    async def close(self):
+        if self.session and not self.session.closed:
+            await self.session.close()
+
+    async def fetch(self, url: str, params: dict):
+        await self.ensure_session()
+        headers = {
+            "x-rapidapi-key": RAPIDAPI_ZILLOW_API_KEY,
+            "x-rapidapi-host": "zillow69.p.rapidapi.com",
+        }
+        logger.info(f"Fetching URL: {url}, params: {params}")
+        try:
+            await self.rate_limiter.acquire()
+            async with self.session.get(
+                url, headers=headers, params=params
+            ) as response:
+                if response.status == 429:
+                    logger.error("Rate limit reached (HTTP 429)")
+                    raise Exception("Rate limit reached")
+                response_data = await response.json()
+                return response_data
+        except ClientError as e:
+            logger.error(f"Error fetching URL: {url}. Error: {str(e)}")
+            raise
 
     async def __aenter__(self):
-        return self.session
+        await self.ensure_session()
+        return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        await self.session.close()
-
-    async def get(self, *args, **kwargs):
-        if ENVIRONMENT == "development":
-            cache_key = self.session.cache.create_key(args[0], kwargs)
-            if await self.session.cache.read(cache_key):
-                logger.debug("Cache hit, skipping rate limiting")
-                return await self.session.get(*args, **kwargs)
-            else:
-                logger.debug("Cache miss, applying rate limiting")
-                await rate_limiter.acquire()
-                return await self.session.get(*args, **kwargs)
-        else:
-            await rate_limiter.acquire()
-            return await self.session.get(*args, **kwargs)
-
-
-async def fetch_from_rapidapi(url, params):
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_ZILLOW_API_KEY,
-        "X-RapidAPI-Host": "zillow69.p.rapidapi.com",
-    }
-    async with RateLimitedSession() as session:
-        async with session.get(url, headers=headers, params=params) as response:
-            response_data = await response.json()
-            return response_data
+        await self.close()
