@@ -22,6 +22,13 @@ async def get_zillow_total_results(location, status_type, **kwargs):
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     response_data = await fetch_from_rapidapi(url, querystring)
+    if response_data.get("totalResultCount") is None:
+        logger.error(
+            f"Total result count is missing in the response data for location: {location}, status_type: {status_type}, kwargs: {kwargs}. Response data: {response_data}"
+        )
+        raise ValueError(
+            f"Total result count is missing in the response data for location: {location}, status_type: {status_type}, kwargs: {kwargs}. Response data: {response_data}"
+        )
     return response_data.get("totalResultCount")
 
 
