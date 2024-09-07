@@ -4,10 +4,12 @@ from app.services.zillow_search_params_service import get_zillow_search_params
 from app.services.zillow_properties_service import fetch_properties_for_params_list
 from app.services.zillow_search_params_service import get_zillow_total_results
 from app.services.property_db_service import get_or_create_properties
-from app.services.rapidapi_client import RateLimiter, RateLimitedSession
+from app.services.rapidapi_client import RateLimiter
 import logging
 import asyncio
 from tqdm.asyncio import tqdm_asyncio
+from aiohttp import ClientSession
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -17,10 +19,16 @@ logging.basicConfig(
 )
 
 
-async def process_zip(zip_code, zip_data, status_type, soldInLast=None, session=None):
+async def process_zip(
+    zip_code, zip_data, status_type, soldInLast=None, session=None, rate_limiter=None
+):
     try:
         zillow_search_params = await get_zillow_search_params(
-            zip_code, status_type, soldInLast=soldInLast, session=session
+            zip_code,
+            status_type,
+            soldInLast=soldInLast,
+            session=session,
+            rate_limiter=rate_limiter,
         )
         if not zillow_search_params:
             logger.warning(
@@ -29,10 +37,14 @@ async def process_zip(zip_code, zip_data, status_type, soldInLast=None, session=
             return
 
         properties = await fetch_properties_for_params_list(
-            zillow_search_params, session=session
+            zillow_search_params, session=session, rate_limiter=rate_limiter
         )
         total_results = await get_zillow_total_results(
-            zip_code, status_type, soldInLast=soldInLast, session=session
+            zip_code,
+            status_type,
+            soldInLast=soldInLast,
+            session=session,
+            rate_limiter=rate_limiter,
         )
 
         logger.info(
@@ -61,14 +73,17 @@ async def run_property_services():
     # Group filtered locations by zip code
     zip_codes = create_zip_code_dicts(locations)
 
-    rate_limiter = RateLimiter(rate=6, per=1)  #  requests per second
-    async with RateLimitedSession(rate_limiter) as session:
-        # Process Sold properties
-        semaphore = asyncio.Semaphore(10)  # Limit to 1 concurrent task
+    rate_limiter = RateLimiter(rate=10)
+    async with ClientSession() as session:
+        rate_limiter_task = asyncio.create_task(rate_limiter.start())
+
+        semaphore = asyncio.Semaphore(10)
 
         async def sem_process_zip(zip_code, zip_data, status_type, soldInLast=None):
             async with semaphore:
-                await process_zip(zip_code, zip_data, status_type, soldInLast, session)
+                await process_zip(
+                    zip_code, zip_data, status_type, soldInLast, session, rate_limiter
+                )
 
         sold_tasks = [
             sem_process_zip(zip_code, zip_data, "RecentlySold", soldInLast="90")
@@ -84,6 +99,9 @@ async def run_property_services():
         await tqdm_asyncio.gather(
             *for_sale_tasks, desc="Processing For Sale Properties"
         )
+
+    await rate_limiter.queue.join()
+    rate_limiter_task.cancel()
 
     return "Success"
 

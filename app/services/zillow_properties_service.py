@@ -1,5 +1,5 @@
 import logging
-from app.services.rapidapi_client import RateLimitedSession  # noqa
+from app.services.rapidapi_client import RAPIDAPI_HEADERS
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -9,7 +9,9 @@ logging.basicConfig(
 )
 
 
-async def fetch_zillow_properties(location, status_type, session=None, **kwargs):
+async def fetch_zillow_properties(
+    location, status_type, session=None, rate_limiter=None, **kwargs
+):
     url = "https://zillow69.p.rapidapi.com/search"
 
     querystring = {
@@ -33,7 +35,14 @@ async def fetch_zillow_properties(location, status_type, session=None, **kwargs)
     while current_page <= total_pages:
         querystring["page"] = current_page
         try:
-            response_data = await session.fetch(url, querystring)
+            response = await rate_limiter.add_task(
+                session.get(
+                    url,
+                    headers=RAPIDAPI_HEADERS,
+                    params=querystring,
+                )
+            )
+            response_data = await response.json()
             properties.extend(response_data.get("props", []))
             total_pages = response_data.get("totalPages", 0)
         except Exception as e:
@@ -49,9 +58,13 @@ async def fetch_zillow_properties(location, status_type, session=None, **kwargs)
     return properties
 
 
-async def fetch_properties_for_params_list(params_list, session=None):
+async def fetch_properties_for_params_list(
+    params_list, session=None, rate_limiter=None
+):
     all_properties = []
     for params in params_list:
-        properties = await fetch_zillow_properties(session=session, **params)
+        properties = await fetch_zillow_properties(
+            session=session, rate_limiter=rate_limiter, **params
+        )
         all_properties.extend(properties)
     return all_properties

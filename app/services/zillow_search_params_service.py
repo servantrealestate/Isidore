@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from app.services.rapidapi_client import RateLimitedSession  # noqa
+from app.services.rapidapi_client import RAPIDAPI_HEADERS
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -10,7 +10,9 @@ logging.basicConfig(
 )
 
 
-async def get_zillow_total_results(location, status_type, session=None, **kwargs):
+async def get_zillow_total_results(
+    location, status_type, session=None, rate_limiter=None, **kwargs
+):
     logger.debug(f"Received kwargs: {kwargs}")
     url = "https://zillow69.p.rapidapi.com/search"
     querystring = {
@@ -21,7 +23,14 @@ async def get_zillow_total_results(location, status_type, session=None, **kwargs
         "minPrice": kwargs.get("minPrice", "") or "",
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
-    response_data = await session.fetch(url, querystring)
+    response = await rate_limiter.add_task(
+        session.get(
+            url,
+            headers=RAPIDAPI_HEADERS,
+            params=querystring,
+        )
+    )
+    response_data = await response.json()
     if response_data.get("totalResultCount") is None:
         logger.error(
             f"Total result count is missing in the response data for location: {location}, status_type: {status_type}, kwargs: {kwargs}. Response data: {response_data}"
@@ -32,7 +41,9 @@ async def get_zillow_total_results(location, status_type, session=None, **kwargs
     return response_data.get("totalResultCount")
 
 
-async def get_min_price(location, status_type, session=None, **kwargs):
+async def get_min_price(
+    location, status_type, session=None, rate_limiter=None, **kwargs
+):
     url = "https://zillow69.p.rapidapi.com/search"
     querystring = {
         "location": location,
@@ -43,11 +54,20 @@ async def get_min_price(location, status_type, session=None, **kwargs):
         "minPrice": kwargs.get("minPrice", "") or "",
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
-    response_data = await session.fetch(url, querystring)
+    response = await rate_limiter.add_task(
+        session.get(
+            url,
+            headers=RAPIDAPI_HEADERS,
+            params=querystring,
+        )
+    )
+    response_data = await response.json()
     return response_data.get("props")[0].get("price")
 
 
-async def get_max_price(location, status_type, session=None, **kwargs):
+async def get_max_price(
+    location, status_type, session=None, rate_limiter=None, **kwargs
+):
     url = "https://zillow69.p.rapidapi.com/search"
     querystring = {
         "location": location,
@@ -58,12 +78,26 @@ async def get_max_price(location, status_type, session=None, **kwargs):
         "minPrice": kwargs.get("minPrice", "") or "",
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
-    response_data = await session.fetch(url, querystring)
+    response = await rate_limiter.add_task(
+        session.get(
+            url,
+            headers=RAPIDAPI_HEADERS,
+            params=querystring,
+        )
+    )
+    response_data = await response.json()
     return response_data.get("props")[0].get("price")
 
 
 async def split_price_query(
-    location, status_type, min_price, max_price, fetch_params, session=None, **kwargs
+    location,
+    status_type,
+    min_price,
+    max_price,
+    fetch_params,
+    session=None,
+    rate_limiter=None,
+    **kwargs,
 ):
     number_of_splits = 3
     price_splits = np.linspace(min_price, max_price, number_of_splits)
@@ -78,6 +112,7 @@ async def split_price_query(
             maxPrice=max_price,
             soldInLast=kwargs.get("soldInLast", "") or "",
             session=session,
+            rate_limiter=rate_limiter,
         )
         logger.info(
             f"Location: {location} | Status Type: {status_type} | Price Range: {min_price}-{max_price} | Total Results: {total_results_for_price_range}"
@@ -110,16 +145,19 @@ async def split_price_query(
                 fetch_params,
                 soldInLast=kwargs.get("soldInLast", "") or "",
                 session=session,
+                rate_limiter=rate_limiter,
             )
 
 
-async def get_zillow_search_params(zip_code, status_type, session=None, **kwargs):
+async def get_zillow_search_params(
+    zip_code, status_type, session=None, rate_limiter=None, **kwargs
+):
     """
     Get the fetch parameters for Zillow API. There is a limit of 820 results per query, so if need be, this will split the query into multiple queries.
     """
     location = zip_code
     total_results = await get_zillow_total_results(
-        location, status_type, **kwargs, session=session
+        location, status_type, **kwargs, session=session, rate_limiter=rate_limiter
     )
     if total_results is None:
         logger.warning(
@@ -137,10 +175,10 @@ async def get_zillow_search_params(zip_code, status_type, session=None, **kwargs
     fetch_params = []
     if total_results > 820:
         min_price = await get_min_price(
-            location, status_type, **kwargs, session=session
+            location, status_type, **kwargs, session=session, rate_limiter=rate_limiter
         )
         max_price = await get_max_price(
-            location, status_type, **kwargs, session=session
+            location, status_type, **kwargs, session=session, rate_limiter=rate_limiter
         )
         await split_price_query(
             location,
@@ -150,6 +188,7 @@ async def get_zillow_search_params(zip_code, status_type, session=None, **kwargs
             fetch_params,
             **kwargs,
             session=session,
+            rate_limiter=rate_limiter,
         )
     else:
         fetch_params.append(
