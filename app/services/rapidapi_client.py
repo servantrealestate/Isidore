@@ -1,6 +1,7 @@
 import os
 import logging
 import asyncio
+from aiocache import cached
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -58,6 +59,7 @@ class RateLimiter:
 
 
 # New function to fetch and check response status
+@cached(ttl=604800)  # Cache for 1 week
 async def fetch_with_status_check(session, url, headers, params):
     response = await session.get(url, headers=headers, params=params)
     if response.status != 200:

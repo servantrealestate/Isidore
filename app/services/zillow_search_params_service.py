@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-from app.services.rapidapi_client import RAPIDAPI_HEADERS
+from app.services.rapidapi_client import RAPIDAPI_HEADERS, fetch_with_status_check
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -24,11 +24,7 @@ async def get_zillow_total_results(
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     response = await rate_limiter.add_task(
-        session.get(
-            url,
-            headers=RAPIDAPI_HEADERS,
-            params=querystring,
-        )
+        fetch_with_status_check(session, url, RAPIDAPI_HEADERS, querystring)
     )
     response_data = await response.json()
     if response_data.get("totalResultCount") is None:
@@ -55,11 +51,7 @@ async def get_min_price(
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     response = await rate_limiter.add_task(
-        session.get(
-            url,
-            headers=RAPIDAPI_HEADERS,
-            params=querystring,
-        )
+        fetch_with_status_check(session, url, RAPIDAPI_HEADERS, querystring)
     )
     response_data = await response.json()
     return response_data.get("props")[0].get("price")
@@ -79,11 +71,7 @@ async def get_max_price(
         "maxPrice": kwargs.get("maxPrice", "") or "",
     }
     response = await rate_limiter.add_task(
-        session.get(
-            url,
-            headers=RAPIDAPI_HEADERS,
-            params=querystring,
-        )
+        fetch_with_status_check(session, url, RAPIDAPI_HEADERS, querystring)
     )
     response_data = await response.json()
     return response_data.get("props")[0].get("price")

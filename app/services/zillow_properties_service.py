@@ -1,5 +1,5 @@
 import logging
-from app.services.rapidapi_client import RAPIDAPI_HEADERS
+from app.services.rapidapi_client import RAPIDAPI_HEADERS, fetch_with_status_check
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -36,11 +36,7 @@ async def fetch_zillow_properties(
         querystring["page"] = current_page
         try:
             response = await rate_limiter.add_task(
-                session.get(
-                    url,
-                    headers=RAPIDAPI_HEADERS,
-                    params=querystring,
-                )
+                fetch_with_status_check(session, url, RAPIDAPI_HEADERS, querystring)
             )
             response_data = await response.json()
             properties.extend(response_data.get("props", []))
