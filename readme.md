@@ -1,6 +1,6 @@
-# Isidore
+# PullAllProps
 
-An app to store property data and store in a database. Named after Isidore the Farmer, the patron saint of land.
+An app to store property data and store in a database. St. Isidore the Farmer, the patron saint of land, pray for us.
 
 ## Project structure
 
